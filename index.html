@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Disegno 2D Parametrico</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Disegno 2D Parametrico</h1>
+
+  <section id="controls">
+    <label for="unitSelect">Unità:</label>
+    <select id="unitSelect">
+      <option value="mm" selected>Millimetri</option>
+      <option value="cm">Centimetri</option>
+      <option value="in">Pollici</option>
+    </select>
+
+    <label for="width">Larghezza tavola:</label>
+    <input type="number" id="width" value="300" step="1">
+
+    <label for="height">Altezza tavola:</label>
+    <input type="number" id="height" value="200" step="1">
+
+    <button id="applySettings">Applica</button>
+  </section>
+
+  <div id="drawing-area">
+    <svg id="drawing-canvas"></svg>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
