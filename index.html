@@ -1,34 +1,46 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <title>Disegno 2D Parametrico</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor vettoriale 2D</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="palette.css" />
 </head>
 <body>
-  <h1>Disegno 2D Parametrico</h1>
 
-  <section id="controls">
-    <label for="unitSelect">Unità:</label>
-    <select id="unitSelect">
-      <option value="mm" selected>Millimetri</option>
-      <option value="cm">Centimetri</option>
-      <option value="in">Pollici</option>
-    </select>
+  <!-- Contenitore principale -->
+  <div id="app-container">
 
-    <label for="width">Larghezza tavola:</label>
-    <input type="number" id="width" value="300" step="1">
+    <!-- Area di disegno -->
+    <div class="svg-container">
+      <svg id="canvas" xmlns="http://www.w3.org/2000/svg">
+        <!-- Gruppo principale soggetto a pan e zoom -->
+        <g id="workspaceGroup"></g>
+      </svg>
+    </div>
 
-    <label for="height">Altezza tavola:</label>
-    <input type="number" id="height" value="200" step="1">
-
-    <button id="applySettings">Applica</button>
-  </section>
-
-  <div id="drawing-area">
-    <svg id="drawing-canvas"></svg>
+    <!-- Palette di controllo caricata dinamicamente -->
+    <div id="palette-container"></div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- Script principali -->
+  <script src="state.js"></script>     <!-- Gestione stato globale -->
+  <script src="drawing.js"></script>   <!-- Disegno della scena -->
+  <script src="interactions.js"></script> <!-- Pan e zoom ecc. -->
+  <script src="palette.js"></script>   <!-- Gestione palette -->
+  
+  <!-- Inizializzazione globale  -->
+  <script>
+    async function initApp() {
+      await loadPalette(); // Carica e inserisce palette.html
+      //initPalette();       // Inizializza event listeners in palette.js
+      initDrawingCanvas(); // Inizializza SVG e disegno
+      renderCanvas();
+    }
+    window.addEventListener("DOMContentLoaded", initApp);
+  </script>
+ 
 </body>
 </html>

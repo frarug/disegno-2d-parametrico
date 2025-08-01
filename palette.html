@@ -1,0 +1,53 @@
+<div id="palette" class="palette-container">
+    <!-- ===== Intestazione trascinabile ===== -->
+    <div id="paletteHeader" class="palette-header">
+        <svg class="drag-icon" width="16" height="16" viewBox="0 0 20 20" fill="white" xmlns="http://www.w3.org/2000/svg">
+          <rect y="4" width="20" height="2"/>
+          <rect y="9" width="20" height="2"/>
+          <rect y="14" width="20" height="2"/>
+        </svg>
+        Control Palette
+      </div>
+    <!-- ===== Sezione impostazioni canvas ===== -->
+    <section class="palette-section">
+      <h3 class="section-header">Canvas</h3>
+      <div class="section-content">
+      <label>Unità:
+        <select id="unitSelect">
+          <option value="mm">mm</option>
+          <option value="cm">cm</option>
+          <option value="px">px</option>
+        </select>
+      </label><br>
+      <label><input type="checkbox" id="showGrid"> Mostra griglia</label> con 
+      <label>passo: <input type="number" id="gridSize" min="0" step="1" class="short-number-6"> </label><br>
+      <label><input type="checkbox" id="showAxes" checked> Mostra assi cartesiani </label>
+      </div>
+    </section>
+  
+    <!-- ===== Sezione zoom ===== -->
+    <section class="palette-section">
+      <h3 class="section-header">Zoom <span id="zoomFactorDisplay" style="float: right; font-weight: normal;">100%</span></h3>
+      <div class="section-content">
+      <button id="zoomIn">+</button>
+      <button id="zoomOut">−</button>
+      <button id="zoomReset">1:1</button>
+      </div>
+    </section>
+  
+    <!-- ===== Lista oggetti ===== -->
+    <section class="palette-section">
+      <h3 class="section-header">Oggetti</h3>
+      <div class="section-content">
+      <ul id="objectList" class="object-list"></ul>
+      </div>
+    </section>
+  
+    <!-- ===== Proprietà oggetto selezionato ===== -->
+    <section class="palette-section">
+      <h3 class="section-header">Proprietà</h3>
+      <div class="section-content">
+      <div id="shapeProperties" class="shape-properties">Nessuna forma selezionata</div>
+      </div>
+    </section>
+  </div>

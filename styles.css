@@ -1,27 +1,125 @@
+/* INIZIO: Stili generali canvas */
 body {
+    margin: 0;
+    overflow: hidden;
     font-family: sans-serif;
-    margin: 20px;
-    background-color: #f9f9f9;
   }
   
-  #controls {
-    margin-bottom: 10px;
-    padding: 10px;
-    background-color: #eee;
-    border-radius: 5px;
+  .app-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
   }
   
-  #controls label {
-    margin-right: 5px;
+  .svg-container {
+    width: 100%;
+    height: 100%;
+    background-color: #979797;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   
-  #drawing-area {
-    border: 1px solid #ccc;
-    display: inline-block;
+  #canvas {
     background-color: white;
+    display: block;
+  }
+  /* FINE: Stili generali canvas */
+
+
+  /* INIZIO: Stili palette */
+  .palette-container {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 300px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    resize: both;
   }
   
-  svg {
-    background-color: #fff;
-    border: 1px solid #000;
+  .palette-header {
+    background-color: #444;
+    color: white;
+    padding: 6px 10px;
+    font-weight: bold;
+    cursor: move;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
+  
+  .palette-section {
+    border-top: 1px solid #ccc;
+  }
+  
+  .palette-section summary {
+    background-color: #ddd;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-weight: bold;
+    user-select: none;
+  }
+  
+  .palette-section summary:hover {
+    background-color: #ccc;
+  }
+  
+  .palette-section details[open] summary {
+    background-color: #ccc;
+  }
+  
+  .palette-content {
+    padding: 8px 10px;
+  }
+  
+  input[type="number"].short {
+    width: 5ch;
+  }
+  
+  /* INIZIO: Lista elementi disegnati */
+  #element-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  #element-list li {
+    padding: 4px;
+    border-bottom: 1px solid #ccc;
+    cursor: pointer;
+  }
+  
+  #element-list li:hover {
+    background-color: #e0e0e0;
+  }
+  
+  #element-list li.selected {
+    background-color: #b3d4fc;
+  }
+  
+  /* Pulsanti */
+  button {
+    margin: 2px;
+    padding: 4px 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #ddd;
+  }
+  
+  .zoom-display {
+    font-weight: normal;
+    font-size: 0.9em;
+    margin-left: 6px;
   }

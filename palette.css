@@ -1,0 +1,94 @@
+/* === Palette Container === */
+.palette-container {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 300px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+    font-family: sans-serif;
+    z-index: 1000;
+    resize: both;
+  }
+ /* INIZIO: Header della palette per trascinamento */
+.palette-header {
+    background-color: #434;
+    color: white;
+    padding: 6 px 10 px;
+    font-weight: bold;
+    cursor: move;
+    display: flex;
+    user-select: none;
+    border-bottom: 1px solid #aaa;
+  }
+  .drag-icon {
+    margin-right: 0.5em;
+    cursor: move;
+    vertical-align: middle;
+  }
+  /* FINE: Header della palette per trascinamento */ 
+/* INIZIO: Sezioni comprimibili */
+.palette-section .section-header {
+    background-color: #ddd;
+    margin: 0;
+    padding: 0.2em;
+    cursor: pointer;
+    border-top: 1px solid #ccc;
+    font-size: 0.8em;
+  }
+  
+  .palette-section .section-content {
+    padding: 0.5em;
+    font-size: 0.8em;
+  }
+  
+  .palette-section.collapsed .section-content {
+    display: none;
+  }
+/* FINE: Sezioni comprimibili */
+
+
+/* INIZIO: Stili per la palette */
+.palette {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 220px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    font-family: sans-serif;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    user-select: none;
+  }
+  
+  .palette-section {
+    margin-bottom: 0px;
+  }
+  
+  
+  .palette-subsection {
+    margin-top: 6px;
+    padding-left: 10px;
+    display: none;
+  }
+  
+  .palette-subsection input,
+  .palette-subsection select,
+  .palette-subsection button {
+    margin-top: 4px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  
+  .short-number-4 { width: 4ch; }
+  .short-number-6 { width: 6ch; }
+  .short-number-8 { width: 8ch; }
+  /* FINE: Stili per la palette */

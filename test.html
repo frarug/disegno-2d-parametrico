@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Griglia SVG</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    svg {
+      width: 100vw;
+      height: 100vh;
+      background-color: #f0f0f0;
+    }
+    line {
+      stroke: #ccc;
+      stroke-width: 0.5;
+    }
+    .axis {
+      stroke: #000;
+      stroke-width: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <svg id="svgRoot"></svg>
+
+  <script>
+    let canvasOffsetX = 0;
+    let canvasOffsetY = 0;
+    let canvasZoom = 1;
+    let gridSpacing = 10;
+
+    function drawGrid(g) {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      // Coordinate logiche visibili
+      const logicalLeft = (-canvasOffsetX - width / 2) / canvasZoom;
+      const logicalRight = (-canvasOffsetX + width / 2) / canvasZoom;
+      const logicalBottom = (-canvasOffsetY - height / 2) / canvasZoom;
+      const logicalTop = (-canvasOffsetY + height / 2) / canvasZoom;
+
+      const startX = Math.floor(logicalLeft / gridSpacing) * gridSpacing;
+      const endX = Math.ceil(logicalRight / gridSpacing) * gridSpacing;
+      const startY = Math.floor(logicalBottom / gridSpacing) * gridSpacing;
+      const endY = Math.ceil(logicalTop / gridSpacing) * gridSpacing;
+
+      for (let x = startX; x <= endX; x += gridSpacing) {
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", x);
+        line.setAttribute("y1", startY);
+        line.setAttribute("x2", x);
+        line.setAttribute("y2", endY);
+        g.appendChild(line);
+      }
+
+      for (let y = startY; y <= endY; y += gridSpacing) {
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", startX);
+        line.setAttribute("y1", y);
+        line.setAttribute("x2", endX);
+        line.setAttribute("y2", y);
+        g.appendChild(line);
+      }
+
+      // Assi cartesiani
+      const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      xAxis.setAttribute("x1", startX);
+      xAxis.setAttribute("y1", 0);
+      xAxis.setAttribute("x2", endX);
+      xAxis.setAttribute("y2", 0);
+      xAxis.setAttribute("class", "axis");
+      g.appendChild(xAxis);
+
+      const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      yAxis.setAttribute("x1", 0);
+      yAxis.setAttribute("y1", startY);
+      yAxis.setAttribute("x2", 0);
+      yAxis.setAttribute("y2", endY);
+      yAxis.setAttribute("class", "axis");
+      g.appendChild(yAxis);
+    }
+
+    function render() {
+      const svg = document.getElementById("svgRoot");
+      svg.innerHTML = ""; // pulizia
+      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      g.setAttribute("transform", `translate(${window.innerWidth/2 + canvasOffsetX}, ${window.innerHeight/2 - canvasOffsetY}) scale(${canvasZoom}, -${canvasZoom})`);
+      svg.appendChild(g);
+      drawGrid(g);
+    }
+
+    // Tasti per testare pan e zoom
+    window.addEventListener("keydown", e => {
+      switch (e.key) {
+        case "ArrowLeft": canvasOffsetX -= 50; break;
+        case "ArrowRight": canvasOffsetX += 50; break;
+        case "ArrowUp": canvasOffsetY += 50; break;
+        case "ArrowDown": canvasOffsetY -= 50; break;
+        case "+": case "=": canvasZoom *= 1.1; break;
+        case "-": canvasZoom /= 1.1; break;
+        case "r": canvasZoom = 1; canvasOffsetX = 0; canvasOffsetY = 0; break;
+      }
+      render();
+    });
+
+    window.addEventListener("resize", render);
+    render();
+  </script>
+</body>
+</html>
