@@ -81,12 +81,14 @@ function initializePaletteInteractions() {
     const zoomResetBtn = document.getElementById("zoomReset");
     
     zoomInBtn.addEventListener("click", () => {
+        //zoomAtPointLogical(0, 0, 1.1);
         canvasZoomFactor *= 1.1;
         renderCanvas();
         updateZoomDisplay();
     });
     
     zoomOutBtn.addEventListener("click", () => {
+      //zoomAtPointLogical(0, 0, 1/1.1);
         canvasZoomFactor /= 1.1;
         renderCanvas();
         updateZoomDisplay();
@@ -121,35 +123,6 @@ function initPalette() {
     makePaletteDraggable();
 }
 
-// Controlli zoom + - 1:1
-/*
-function bindZoomControls() {
-    const zoomInBtn = document.getElementById("zoomIn");
-    const zoomOutBtn = document.getElementById("zoomOut");
-    const zoomResetBtn = document.getElementById("zoomReset");
-    
-    zoomInBtn.addEventListener("click", () => {
-        canvasZoomFactor *= 1.1;
-        renderCanvas();
-        updateZoomDisplay();
-    });
-    
-    zoomOutBtn.addEventListener("click", () => {
-        canvasZoomFactor /= 1.1;
-        renderCanvas();
-        updateZoomDisplay();
-    });
-    
-    zoomResetBtn.addEventListener("click", () => {
-        canvasZoomFactor = 1;
-        //canvasOffsetX = 0;
-        //canvasOffsetY = 0;
-        renderCanvas();
-        updateZoomDisplay();
-    });
-}
-    */
-    
   
   // Gestione lista oggetti disegnati (array shapes)
   function renderObjectList() {
@@ -175,9 +148,212 @@ function bindZoomControls() {
 
     }
   }
+
+  function updateElementsOld() {
+    const listContainer = document.getElementById("element-list");
+    listContainer.innerHTML = ""; // svuota la lista
+  
+    // Ciclo inverso per mostrare l'ultimo elemento in cima
+    for (let i = elements.length - 1; i >= 0; i--) {
+      const el = elements[i];
+      console.log(el);
+      const listItem = document.createElement("li");
+  
+      listItem.textContent = el.name || `${el.type} ${el.id}`;
+      listItem.dataset.id = el.id;
+  
+      // (opzionale) Aggiungi comportamento click per selezione
+      listItem.addEventListener("click", () => {
+        selectElementById(el.id); 
+      });
+  
+      listContainer.appendChild(listItem);
+    }
+  }
+  function updateElements() {
+    const tbody = document.querySelector("#element-list tbody");
+    tbody.innerHTML = ""; // Svuota
+  
+    for (let i = elements.length - 1; i >= 0; i--) {
+      const el = elements[i];
+      const row = document.createElement("tr");
+  
+      // Nome elemento
+      const nameCell = document.createElement("td");
+      nameCell.textContent = el.name || `${el.type} ${el.id}`;
+      row.appendChild(nameCell);
+
+      row.addEventListener("click", () => {
+        selectElementById(el.id); 
+      });
+  
+      // Icona visibilità
+      const visCell = document.createElement("td");
+      const icon = el.visible ? createCheckIcon(16, 16) : createCrossIcon(16, 16);
+  
+      icon.style.cursor = "pointer";
+      icon.addEventListener("click", () => {
+        el.visible = !el.visible;
+        updateElements(); // refresh tabella
+        renderCanvas();
+        // eventuale refresh del disegno
+        // drawElements(svgContainer);
+      });
+  
+      visCell.appendChild(icon);
+      row.appendChild(visCell);
+  
+      tbody.appendChild(row);
+    }
+  }
+
+  function selectElementById(id) {
+    const selected = elements.find(el => el.id === id);
+    if (selected) {
+      console.log("Elemento selezionato:", selected);
+      showElementProperties(id);
+    }
+  }
   
   // Mostra/modifica proprietà forma selezionata
-  function renderSelectedShapeProperties() {
+
+  function showElementProperties(elementId) {
+    const element = elements.find(el => el.id === elementId);
+    if (!element) {
+      console.warn("Elemento non trovato:", elementId);
+      return;
+    }
+  
+    const propertiesContainer = document.getElementById("properties-content");
+    propertiesContainer.innerHTML = "";  // puliamo la sezione proprietà
+  
+    // Creiamo le sezioni base con solo i titoli per ora
+    const sections = [
+      { id: "position-size", title: "Posizione e Dimensioni" },
+      { id: "fill", title: "Riempimento" },
+      { id: "stroke", title: "Linea" }
+    ];
+  
+    const elemsById = {};
+
+    for (const sec of sections) {
+      const sectionEl = document.createElement("div");
+      sectionEl.id = sec.id;
+      sectionEl.classList.add("property-section");
+  
+      const header = document.createElement("h4");
+      header.textContent = sec.title;
+      sectionEl.appendChild(header);
+  
+      propertiesContainer.appendChild(sectionEl);
+      elemsById[sec.id] = sectionEl;  // <-- salva il riferimento nel dizionario
+    }
+    // --- Posizione e Dimensioni ---
+    if (element.type === "rect") {
+    // x
+    const inputX = createNumberInput("X", element.x, val => {
+      element.x = val; 
+      redraw();
+    });
+    console.log(inputX);
+    elemsById["position-size"].appendChild(inputX);
+
+    // y
+    const inputY = createNumberInput("Y", element.y, val => {
+      element.y = val;
+      redraw();
+    });
+    elemsById["position-size"].appendChild(inputY);
+
+    // width
+    const inputWidth = createNumberInput("Larghezza", element.width, val => {
+      element.width = val;
+      redraw();
+    });
+    elemsById["position-size"].appendChild(inputWidth);
+
+    // height
+    const inputHeight = createNumberInput("Altezza", element.height, val => {
+      element.height = val;
+      redraw();
+    });
+    elemsById["position-size"].appendChild(inputHeight);
+
+    // Fill (colore)
+    const inputFill = createColorInput("Riempimento", element.fill.fill || element.fill, val => {
+      if (typeof element.fill === "object") {
+        element.fill.fill = val;
+      } else {
+        element.fill = val;
+      }
+      redraw();
+    });
+    elemsById["fill"].appendChild(inputFill);
+
+    // Stroke (colore)
+    const inputStroke = createColorInput("Colore linea", element.stroke.stroke || element.stroke, val => {
+      if (typeof element.stroke === "object") {
+        element.stroke.stroke = val;
+      } else {
+        element.stroke = val;
+      }
+      redraw();
+    });
+    elemsById["stroke"].appendChild(inputStroke);
+
+    // Stroke Width (numero)
+    const inputStrokeWidth = createNumberInput("Spessore linea", element.stroke.strokeWidth || element.strokeWidth, val => {
+      if (typeof element.stroke === "object") {
+        element.stroke.strokeWidth = val;
+      } else {
+        element.strokeWidth = val;
+      }
+      redraw();
+    });
+    elemsById["stroke"].appendChild(inputStrokeWidth);
+
+    // Qui in futuro puoi aggiungere altri tipi di elemento...
+
+    // Funzioni helper per creare gli input
+    function createNumberInput(labelText, initialValue, onChange) {
+      const container = document.createElement("div");
+      container.classList.add("property-input");
+
+      const label = document.createElement("label");
+      label.textContent = labelText;
+      container.appendChild(label);
+
+      const input = document.createElement("input");
+      input.type = "number";
+      input.value = initialValue;
+      input.step = "any";
+      input.addEventListener("input", e => onChange(parseFloat(e.target.value)));
+      container.appendChild(input);
+
+      return container;
+    }
+
+    function createColorInput(labelText, initialValue, onChange) {
+      const container = document.createElement("div");
+      container.classList.add("property-input");
+
+      const label = document.createElement("label");
+      label.textContent = labelText;
+      container.appendChild(label);
+
+      const input = document.createElement("input");
+      input.type = "color";
+      input.value = initialValue || "#000000";
+      input.addEventListener("input", e => onChange(e.target.value));
+      container.appendChild(input);
+
+      return container;
+    }
+  }
+}
+
+
+  function renderSelectedShapePropertiesOld() {
     const propContainer = document.getElementById("shapeProperties");
     propContainer.innerHTML = "";
   
@@ -237,6 +413,10 @@ function makePaletteDraggable() {
     const palette = document.getElementById("palette");
     const header = palette.querySelector(".palette-header");
   
+    // Aggiungi la dragIcon generata da graphics.js
+    if (header) {
+      header.prepend(createDragIcon(16, 16, "white"));
+    }
     let offsetX = 0, offsetY = 0, isDragging = false;
   
     header.addEventListener("mousedown", (e) => {

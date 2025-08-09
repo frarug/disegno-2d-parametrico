@@ -22,8 +22,9 @@ canvas.addEventListener("mousemove", (e) => {
   const dy = (e.clientY - startPan.y) ;
 
   canvasOffsetX += dx;
-  canvasOffsetY += dy;
+  canvasOffsetY -= dy;
 
+  //console.log("canvasOffsetX:"+canvasOffsetX+" canvasOffsetY:"+canvasOffsetY);
   startPan.x = e.clientX;
   startPan.y = e.clientY;
   renderCanvas();
@@ -38,10 +39,11 @@ canvas.addEventListener("mouseleave", () => {
 });
 
 // Zoom con rotella del mouse
-canvas.addEventListener("wheel", (e) => {
+/*
+canvas.addEventListenerOld("wheel", (e) => {
   e.preventDefault();
 
-  const zoomFactor = 1.1;
+  const zoomFactor = 1.01;
   const direction = e.deltaY > 0 ? 1 / zoomFactor : zoomFactor;
 
   // Zoom centrato nel punto del mouse
@@ -58,6 +60,32 @@ canvas.addEventListener("wheel", (e) => {
   canvasOffsetY = my - worldY * canvasZoomFactor;
 
   //console.warn(canvasZoomFactor);
+  renderCanvas();
+  updateZoomDisplay();
+}, { passive: false });
+*/
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+
+  const zoomFactor = 1.01;
+  const direction = e.deltaY > 0 ? 1 / zoomFactor : zoomFactor;
+
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  const worldX = (mx - canvasOffsetX) / (canvasZoomFactor * pxPerMM);
+  const worldY = ((canvasHeight - my) - canvasOffsetY) / (canvasZoomFactor * pxPerMM); 
+
+  canvasZoomFactor *= direction;
+  canvasOffsetX = mx - (worldX * canvasZoomFactor * pxPerMM);
+  canvasOffsetY = canvasHeight - my - (worldY * canvasZoomFactor * pxPerMM);
+
+  //console.log("direction:"+direction+" canvasZoomFactor:"+canvasZoomFactor);
+  //console.log("mx:"+mx+" my:"+my+" canvasHeight - my:"+(canvasHeight - my));
+  //console.log("worldX:"+worldX+" worldY:"+worldY);
+  //console.log("canvasOffsetX:"+canvasOffsetX+" canvasOffsetY:"+canvasOffsetY);
+
   renderCanvas();
   updateZoomDisplay();
 }, { passive: false });

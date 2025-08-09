@@ -2,164 +2,165 @@
 
 let svg, g;
 
+// === Inizio definizione classe Line ===
+class Line {
+    constructor( x1, y1, x2, y2, stroke = defaultStrokeStyle, visible = true) {
+        this.id = generateElementId();
+        this.name = "line"+this.id;
+      this.type = "line";
+      this.x1 = x1;
+      this.y1 = y1;
+      this.x2 = x2;
+      this.y2 = y2;
+      this.strokeStyle = { ...stroke };
+      this.visible = visible;
+    }
+  
+    render(svg) {
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", this.x1);
+      line.setAttribute("y1", this.y1); 
+      line.setAttribute("x2", this.x2);
+      line.setAttribute("y2", this.y2);
+  
+      // Applica lo stile del bordo
+      applyStrokeStyle(line, this.strokeStyle);
+  
+      svg.appendChild(line);
+    }
+  }
+// === Inizio definizione classe Rect ===
+class Rect {
+    constructor(x, y, width, height, fillStyle = defaultFillStyle, strokeStyle = defaultStrokeStyle, visible = true) {
+        this.id = generateElementId();
+        this.name = "rect"+this.id;
+        this.type = "rect";
+      this.x = x;
+      this.y = y;
+      this.width = width;
+      this.height = height;
+      this.fillStyle = { ...fillStyle };
+      this.strokeStyle = { ...strokeStyle };
+      this.visible = visible;
+    }
+  
+    render(svg) {
+        console.log(this);
+      if (!this.visible) return;
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      rect.setAttribute("x", this.x);
+      rect.setAttribute("y", this.y); 
+      rect.setAttribute("width", this.width);
+      rect.setAttribute("height", this.height);
+      //fill
+      rect.setAttribute("fill", this.fillStyle.fill || "none");
+      rect.setAttribute("fill-opacity", this.fillStyle.fillOpacity ?? 1);
+      
+      //stroke
+      applyStrokeStyle(rect, this.strokeStyle);
+      svg.appendChild(rect);
+    }
+  }
+  // === Fine definizione classe Rect ===
+
+// INIZIO funzioni di utility ===
+  function applyStrokeStyle(el, strokeStyle = {}) {
+    el.setAttribute("stroke", strokeStyle.stroke || "none");
+    el.setAttribute("stroke-width", strokeStyle.strokeWidth ?? 1);
+    el.setAttribute("stroke-opacity", strokeStyle.strokeOpacity ?? 1);
+    el.setAttribute("stroke-dasharray", strokeStyle.strokeDasharray || "none");
+    el.setAttribute("stroke-linecap", strokeStyle.strokeLinecap || "butt");
+    el.setAttribute("stroke-linejoin", strokeStyle.strokeLinejoin || "miter");
+  }
+// FINE funzioni di utility
+
+
+
 // INIZIO: Inizializzazione della canvas SVG
-function initDrawingCanvas() {
+  function initDrawingCanvas() {
     svg = document.getElementById("canvas");
     if (!svg) {
       console.error("Canvas SVG non trovato");
       return;
     }
+    // Pulisce il contenuto precedente
+    svg.innerHTML = "";
+
+    // Calcola larghezza e altezza della canvas in pixel
+    canvasWidth = window.innerWidth;
+    canvasHeight = window.innerHeight;
   
-    // Assicura che SVG riempia lo schermo
+    // Imposta dimensione SVG in pixel
     svg.setAttribute("width", canvasWidth);
     svg.setAttribute("height", canvasHeight);
     svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    svg.setAttribute("transform", `scale(1, -1)`); // inverte il verso dell'asse Y
   
-    // Pulisce SVG (elimina anche il gruppo <g> se già presente)
-    svg.innerHTML = "";
+    // Dimensioni visibili in millimetri, considerando il dpi del monitor
+    /*
+    const mmPerInch = 25.4;  
+    const viewBoxX = canvasOffsetX/canvasZoomFactor;//
+    const viewBoxY = -canvasOffsetY/canvasZoomFactor;//
+    const viewBoxWidth = (canvasWidth / dpiMonitor) * mmPerInch;
+    const viewBoxHeight = (canvasHeight / dpiMonitor) * mmPerInch;
   
-    // Crea il gruppo g
-    g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.setAttribute("transform", `translate(${canvasOffsetX}, ${canvasOffsetY}) scale(${canvasZoomFactor})`);
-    console.log("canvasOffsetX:"+canvasOffsetX+" canvasOffsetY"+canvasOffsetX+" canvasZoomFactor:"+canvasZoomFactor);
-    svg.appendChild(g);
+    svg.setAttribute("viewBox", `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`);
+    */
+    //svg.setAttribute("transform", "rotate(-5, 0, 0)"); // questa non funziona.
+    
+    //console.log("initDrawingCanvas-> canvasOffsetX:"+canvasOffsetX+" canvasOffsetY:"+canvasOffsetY);
   }
   // FINE: Inizializzazione della canvas SVG
 
-  /*
-  function updateCanvas() {
-    const svg = document.getElementById("canvas");
-    svg.innerHTML = ""; // Pulisci tutto
   
-    // Crea un gruppo trasformato
-    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    const scale = canvasZoomFactor;
-    const translateX = canvasOffsetX;
-    const translateY = canvasOffsetY;
   
-    // Trasformazione: pan + zoom + inverti asse Y
-    g.setAttribute("transform", `translate(${translateX}, ${translateY}) scale(${scale}, -${scale})`);
-    svg.appendChild(g); // Aggiungi il gruppo alla canvas
-  
-    // Disegna tutto dentro g
-    if (showGrid) drawGrid(g);
-    if (showAxes) drawAxes(g);
-    drawElements(g); // Tutti gli oggetti disegnati
-
-  }
-  */
   // INIZIO: Funzione principale di disegno
-  
+  function renderCanvas() {
+    //console.log(svg);
+    if (!svg) return;
 
+    svg.innerHTML = ""; // Pulisce eventuali elementi precedenti
+   
+    // Imposto l'origine della viewBox 
+    const viewBoxX = -canvasOffsetX/ pxPerMM /canvasZoomFactor; 
+    const viewBoxY = -canvasOffsetY/ pxPerMM /canvasZoomFactor; 
+    // Dimensioni della viewBox in unità logiche (tenendo conto dello zoom)
+    const viewWidth = (canvasWidth / pxPerMM) / canvasZoomFactor;
+    const viewHeight = (canvasHeight / pxPerMM) / canvasZoomFactor;
   
+    // Applica la viewBox con coordinate logiche
+    svg.setAttribute("viewBox", `${viewBoxX} ${viewBoxY} ${viewWidth} ${viewHeight}`);
+    //console.log(svg.getAttribute("viewBox"));
+
+    if (showGrid) drawGrid(svg);    
+    if (showAxes) drawAxes(svg);
+    drawElements(svg);
+  }
   // FINE: Funzione principale di disegno
+
+
+  function zoomAtPointLogical(logicalX, logicalY, zoomDelta) {
+    // Converti coordinate logiche in fisiche
+    const focusX = logicalX * canvasZoomFactor + canvasOffsetX;
+    const focusY = canvasHeight - (logicalY * canvasZoomFactor + canvasOffsetY);
+
+    // Richiama zoomAtPoint originale con coordinate fisiche
+    zoomAtPoint(focusX, focusY, zoomDelta);
+  }
+
+  function zoomAtPoint(focusX, focusY, zoomDelta) {
+    const oldZoom = canvasZoomFactor;
+    const newZoom = oldZoom * zoomDelta;
   
+    canvasOffsetX = focusX - (focusX - canvasOffsetX) * (newZoom / oldZoom);
+    canvasOffsetY = focusY - (focusY - canvasOffsetY) * (newZoom / oldZoom);
+  
+    canvasZoomFactor = newZoom;
+    renderCanvas();
+  }
+
   // INIZIO: Disegno della griglia
-  
-  /*
-  function drawGrid(group) {
-    if (!showGrid || gridSpacing < 0) return;
-  
-    const step = gridSpacing;
-  
-    const svg = document.getElementById("canvas");
-    const widthPx = svg.clientWidth;
-    const heightPx = svg.clientHeight;
-  
-    const widthUnits = widthPx ;
-    const heightUnits = heightPx ;
-  
-    const left = -canvasOffsetX - widthUnits ;
-    const right = -canvasOffsetX + widthUnits ;
-    const bottom = -canvasOffsetY - heightUnits ;
-    const top = -canvasOffsetY + heightUnits ;
-  
-    const startX = Math.floor(left / step) * step;
-    const endX = Math.ceil(right / step) * step;
-  
-    const startY = Math.floor(bottom / step) * step;
-    const endY = Math.ceil(top / step) * step;
-
-    console.log("----- wH:"+widthPx +" wH:"+heightPx+"  left:"+left+"  right:"+right+"  top:"+top+"  bottom:"+bottom);
-  
-    //disegno le linee orizzontali
-    for (let x = startX; x <= endX; x += step) {
-      const line = createGridLine(x, bottom, x, top);
-      group.appendChild(line);
-    }
-  
-    //disegno le linee verticali
-    for (let y = startY; y <= endY; y += step) {
-      const line = createGridLine(left, y, right, y);
-      group.appendChild(line);
-    }
-  }
-  
-  function createGridLine(x1, y1, x2, y2) {
-    console.log("x1:"+x1+" y1:"+y1+" x2:"+x2+" y2:"+y2);
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", x1);
-    line.setAttribute("y1", y1);
-    line.setAttribute("x2", x2);
-    line.setAttribute("y2", y2);
-    line.setAttribute("stroke", "#ccc");
-    line.setAttribute("stroke-width", 0.5); // Costante nelle unità logiche
-    return line;
-  }
-
-  */
-
-  function drawGrid4(g) {
-    if (!showGrid || gridSpacing <= 0) return;
-  
-    // Dimensioni viewport
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-  
-    // Coordinate logiche agli estremi della viewport
-    const logicalLeft   = -canvasOffsetX / canvasZoomFactor - width  / (2 * canvasZoomFactor);
-    const logicalRight  = -canvasOffsetX / canvasZoomFactor + width  / (2 * canvasZoomFactor);
-    const logicalBottom = -canvasOffsetY / canvasZoomFactor - height / (2 * canvasZoomFactor);
-    const logicalTop    = -canvasOffsetY / canvasZoomFactor + height / (2 * canvasZoomFactor);
-    
-  
-    // Inizio allineato alla griglia (orizzontale)
-    const startX = Math.floor(logicalLeft / gridSpacing) * gridSpacing;
-    const endX = Math.ceil(logicalRight / gridSpacing) * gridSpacing;
-  
-    const startY = Math.floor(logicalTop / gridSpacing) * gridSpacing;
-    const endY = Math.ceil(logicalBottom / gridSpacing) * gridSpacing;
-  
-    // Stile griglia
-    const gridColor = "#aaa";
-    const gridWidth = 0.5;
-  
-    // Linee verticali
-    for (let x = startX; x <= endX; x += gridSpacing) {
-      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      line.setAttribute("x1", x);
-      line.setAttribute("y1", startY);
-      line.setAttribute("x2", x);
-      line.setAttribute("y2", endY);
-      line.setAttribute("stroke", gridColor);
-      line.setAttribute("stroke-width", gridWidth);
-      g.appendChild(line);
-    }
-  
-    // Linee orizzontali
-    for (let y = startY; y <= endY; y += gridSpacing) {
-      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      line.setAttribute("x1", startX);
-      line.setAttribute("y1", y);
-      line.setAttribute("x2", endX);
-      line.setAttribute("y2", y);
-      line.setAttribute("stroke", gridColor);
-      line.setAttribute("stroke-width", gridWidth);
-      g.appendChild(line);
-    }
-  }
-
-  function drawGrid(g) {
+  function drawGridOld(g) {
     const spacing = gridSpacing;
     if (spacing <= 0) return;
   
@@ -176,9 +177,9 @@ function initDrawingCanvas() {
 
     const gridColor = "#aaa";
     const gridWidth = 0.5;
-    console.log("------- canvasOffsetX:"+canvasOffsetX+" canvasOffsetY"+canvasOffsetX+" canvasZoomFactor:"+canvasZoomFactor);
+    console.log("------- canvasOffsetX:"+canvasOffsetX+" canvasOffsetY:"+canvasOffsetY+" canvasZoomFactor:"+canvasZoomFactor);
 
-    console.log("logicalLeft:"+logicalLeft+" logicalBottom"+logicalBottom+" canvasZoomFactor:"+canvasZoomFactor);
+    console.log("logicalLeft:"+logicalLeft+" logicalBottom:"+logicalBottom+" canvasZoomFactor:"+canvasZoomFactor);
 
   
     for (let x = startX; x <= endX; x += spacing) {
@@ -203,60 +204,63 @@ function initDrawingCanvas() {
       g.appendChild(line);
     }
   }
+
+  function drawGrid(svg) {
+    return;
+  }
   // FINE: Disegno della griglia
   
   // INIZIO: Disegno degli assi cartesiani
-  
-  function drawAxes(g) {
-    const svg = document.getElementById("canvas");
-    //const { canvasWidth, canvasHeight, showAxes } = state;
+  function drawAxes(svg) {
     if (!showAxes) return;
   
-    //const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  
-    // Applichiamo pan, zoom e asse Y invertito (per avere l'origine in basso)
-    const scale = canvasZoomFactor;
-    const translateX = canvasOffsetX;
-    const translateY = canvasOffsetY + canvasHeight * scale; // sposta l'origine in basso
-  
-    g.setAttribute("transform", `translate(${translateX}, ${translateY}) scale(${scale}, -${scale})`);
-  
-    // Lunghezza freccia
-    const arrowSize = 10;
+    const translateX = canvasOffsetX/ pxPerMM /canvasZoomFactor;;
+    const translateY = canvasOffsetY/ pxPerMM /canvasZoomFactor;;
+
+    const arrowSize = 3/canvasZoomFactor;
+    const viewWidth = (canvasWidth / pxPerMM)/canvasZoomFactor;
+    const viewHeight = (canvasHeight / pxPerMM) /canvasZoomFactor;
   
     // Asse X
     const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
     xAxis.setAttribute("x1", 0);
     xAxis.setAttribute("y1", 0);
-    xAxis.setAttribute("x2", canvasWidth - arrowSize * 2);
+    xAxis.setAttribute("x2", viewWidth - translateX - arrowSize * 2);
     xAxis.setAttribute("y2", 0);
     xAxis.setAttribute("stroke", "green");
-    xAxis.setAttribute("stroke-width", 1 / scale); // per restare sottile a ogni zoom
-    g.appendChild(xAxis);
+    xAxis.setAttribute("stroke-width", 1);
+    xAxis.setAttribute("vector-effect", "non-scaling-stroke");
+    svg.appendChild(xAxis);
+    //console.log("viewWidth:"+viewWidth+" translateX:"+translateX);
+    //console.log(xAxis.getAttribute("x2"));
   
     // Freccia X
+    const xTip = viewWidth - translateX - arrowSize * 2;
     const xArrow = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-    const xTip = canvasWidth - arrowSize * 2;
     xArrow.setAttribute("points", `
       ${xTip},${-arrowSize / 2}
       ${xTip + arrowSize},0
       ${xTip},${arrowSize / 2}
     `);
-    xArrow.setAttribute("fill", "green");
-    g.appendChild(xArrow);
+    xArrow.setAttribute("fill", "transparent");
+    xArrow.setAttribute("stroke", "green");
+    xArrow.setAttribute("stroke-width", "1");
+    xArrow.setAttribute("vector-effect", "non-scaling-stroke");
+    svg.appendChild(xArrow);
   
     // Asse Y
     const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "line");
     yAxis.setAttribute("x1", 0);
     yAxis.setAttribute("y1", 0);
     yAxis.setAttribute("x2", 0);
-    yAxis.setAttribute("y2", canvasHeight - arrowSize * 2);
+    yAxis.setAttribute("y2", viewHeight - translateY - arrowSize * 2);
     yAxis.setAttribute("stroke", "blue");
-    yAxis.setAttribute("stroke-width", 1 / scale);
-    g.appendChild(yAxis);
+    yAxis.setAttribute("stroke-width", 1);
+    yAxis.setAttribute("vector-effect", "non-scaling-stroke");
+    svg.appendChild(yAxis);
   
     // Freccia Y
-    const yTip = canvasHeight - arrowSize * 2;
+    const yTip = viewHeight - translateY - arrowSize * 2;
     const yArrow = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
     yArrow.setAttribute("points", `
       ${-arrowSize / 2},${yTip}
@@ -264,13 +268,81 @@ function initDrawingCanvas() {
       ${arrowSize / 2},${yTip}
     `);
     yArrow.setAttribute("fill", "blue");
-    g.appendChild(yArrow);
+    svg.appendChild(yArrow);
   }
   // FINE: Disegno degli assi cartesiani
+
+
+  // INIZIO: aggiungi una forma al disegno
+  function addShapeToCanvas(elementType) {
+    const svg = document.querySelector("svg");
+    const paramsContainer = document.getElementById("shape-params");
+    const inputs = paramsContainer.querySelectorAll("input, select");
+    const paramValues = {};
+  
+    inputs.forEach(input => {
+      paramValues[input.name] = input.type === "number" ? parseFloat(input.value) : input.value;
+    });
+  
+    let newElement = null;
+  
+    switch (elementType) {
+      case "line":
+        console.log("paramValues:", paramValues);
+        newElement = new Line(
+            parseFloat(paramValues.x1) || 0,
+            parseFloat(paramValues.y1) || 0,
+            parseFloat(paramValues.x2) || 10,
+            parseFloat(paramValues.y2) || 10,
+            {
+            stroke: paramValues.stroke || defaultStrokeStyle.stroke,
+            strokeWidth: parseFloat(paramValues.strokeWidth) || defaultStrokeStyle.strokeWidth,
+            strokeOpacity: 1,
+            strokeDasharray: "none",
+            strokeLinecap: "butt"
+            },
+            true
+        );
+        break;
+      case "rect":
+        //console.log("paramValues:", paramValues);
+        newElement = new Rect(
+            parseFloat(paramValues.x) || 0,
+            parseFloat(paramValues.y) || 0,
+            parseFloat(paramValues.width) || 10,
+            parseFloat(paramValues.height) || 10,
+            {
+              fill: paramValues.fill || defaultFillStyle.fill,
+              fillOpacity: 1
+            },
+            {
+              stroke: paramValues.stroke || defaultStrokeStyle.stroke,
+              strokeWidth: parseFloat(paramValues.strokeWidth) || defaultStrokeStyle.strokeWidth,
+              strokeOpacity: 1,
+              strokeDasharray: "none",
+              strokeLinecap: "butt"
+            },
+            true
+        );
+        break;
+  
+      // Altri tipi: case "line", "circle", ecc. (li aggiungerai in seguito)
+  
+      default:
+        console.warn(`Tipo di elemento non supportato: ${elementType}`);
+        return;
+    }
+  
+    if (newElement) {
+      elements.push(newElement);
+      updateElements();
+      newElement.render(svg);
+    }
+  }
   
   // INIZIO: Disegno delle forme utente
 
-  function drawElements(g) {
+  function drawElementsOld(svg) {
     for (const element of elements) {
       if (!element.visible) continue;
   
@@ -280,8 +352,10 @@ function initDrawingCanvas() {
           break;
         case "circle":
         case "ellipse":
-          drawEllipseOrCircle(element, g);
+          drawEllipseOrCircle(element, svg);
           break;
+        case "rect":
+            element.render(svg);
         // aggiungi altri tipi se ne hai
         default:
           console.warn("Tipo di elemento non riconosciuto:", element.type);
@@ -289,9 +363,17 @@ function initDrawingCanvas() {
     }
   }
 
-  function drawLine(line, g) {
+  function drawElements(svg) {
+    for (const element of elements) {
+      if (element.visible) {
+        element.render(svg);
+      }
+    }
+  }
+
+  function drawLine(line, svg) {
     const { x1, y1, x2, y2, stroke = "black", strokeWidth = 1 } = line;
-    const zoom = zoomFactor || 1;
+    const zoom = canvasZoomFactor || 1;
   
     const lineElement = document.createElementNS("http://www.w3.org/2000/svg", "line");
     lineElement.setAttribute("x1", (x1 * zoom + canvasOffsetX).toFixed(2));
@@ -301,10 +383,10 @@ function initDrawingCanvas() {
     lineElement.setAttribute("stroke", stroke);
     lineElement.setAttribute("stroke-width", strokeWidth);
   
-    g.appendChild(lineElement);
+    svg.appendChild(lineElement);
   }
 
-  function drawEllipseOrCircle(obj, g) {
+  function drawEllipseOrCircle(obj, svg) {
     const {
       cx, cy,
       rx, ry, // se mancano, possiamo usare "r"
@@ -314,7 +396,7 @@ function initDrawingCanvas() {
       fill = "none"
     } = obj;
   
-    const zoom = zoomFactor || 1;
+    const zoom = canvasZoomFactor || 1;
     const offsetX = canvasOffsetX || 0;
     const offsetY = canvasOffsetY || 0;
   
@@ -333,10 +415,10 @@ function initDrawingCanvas() {
     ellipse.setAttribute("stroke-width", strokeWidth);
     ellipse.setAttribute("fill", fill);
   
-    g.appendChild(ellipse);
+    svg.appendChild(ellipse);
   }
 
-  function drawArc(arc, g) {
+  function drawArc(arc, svg) {
     const {
       cx, cy, r,
       startAngle, endAngle,
@@ -344,7 +426,7 @@ function initDrawingCanvas() {
       strokeWidth = 1
     } = arc;
   
-    const zoom = zoomFactor || 1;
+    const zoom = canvasZoomFactor || 1;
     const offsetX = canvasOffsetX || 0;
     const offsetY = canvasOffsetY || 0;
   
@@ -378,58 +460,10 @@ function initDrawingCanvas() {
     path.setAttribute("stroke", stroke);
     path.setAttribute("stroke-width", strokeWidth);
   
-    g.appendChild(path);
+    svg.appendChild(path);
   }
-
   // FINE: Disegno delle forme utente
 
   
 
   
-  function renderCanvas2() {
-    //const svg = document.getElementById("canvas");
-  
-    // 1. Imposta dimensioni fisiche della canvas
-    svg.setAttribute("width", canvasWidth);
-    svg.setAttribute("height", canvasHeight);
-    svg.style.width = canvasWidth + "px";
-    svg.style.height = canvasHeight + "px";
-  
-    // 2. Pulisci il contenuto della canvas (svg)
-    svg.innerHTML = "";
-  
-    // 3. Crea un gruppo trasformato che tenga conto di pan e zoom
-    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    const scale = canvasZoomFactor;
-    const translateX = canvasOffsetX;
-    const translateY = canvasOffsetY;
-  
-    // 4. Applica trasformazioni (pan + zoom + inverti Y)
-    g.setAttribute("transform", `translate(${translateX}, ${translateY}) scale(${scale}, -${scale})`);
-    svg.appendChild(g);
-  
-    // 5. Ridisegna griglia, assi e oggetti dentro g
-    if (showGrid) {
-      drawGrid(g);
-    }
-    if (showAxes) {
-      drawAxes(g);
-    }
-  
-    drawElements(g);
-  }
-
-  function renderCanvas() {
-    if (!svg || !g) return;
-  
-    // Pulisce il gruppo trasformabile
-    g.innerHTML = "";
-  
-    // Imposta la trasformazione globale per pan e zoom
-    g.setAttribute("transform", `translate(${canvasOffsetX}, ${canvasOffsetY}) scale(${canvasZoomFactor})`);
-  
-    // Disegna la griglia, assi e oggetti utente
-    if (showGrid) drawGrid(g);
-    if (showAxes) drawAxes(g);
-    drawElements(g);
-  }

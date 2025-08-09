@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<title>Test font-size input</title>
+<style>
+  .palette-container {
+    font-size: x-small; /* o 12px */
+    border: 1px solid #ccc;
+    padding: 10px;
+    width: 300px;
+  }
+
+  .palette-container input,
+  .palette-container select,
+  .palette-container textarea {
+    font-size: inherit !important; /* eredita da .palette-container */
+    padding: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="palette-container">
+  <p>Testo normale con font-size small</p>
+  <input type="text" value="input testo" />
+  <select>
+    <option>Opzione 1</option>
+    <option>Opzione 2</option>
+  </select>
+  <textarea rows="2">Textarea</textarea>
+</div>
+
+</body>
+</html>

@@ -2,8 +2,8 @@
 // ======= INIZIO: Stato Globale dell'Applicazione =======
 
 // Offset e zoom della canvas
-let canvasOffsetX = 0;
-let canvasOffsetY = 0;
+let canvasOffsetX = 4; // offset in millimetri
+let canvasOffsetY = 4; // offset in millimetri
 let canvasZoomFactor = 1.0;
 
 // Dimensione area di lavoro 
@@ -13,8 +13,12 @@ let canvasHeight = window.innerHeight;
 // Unità di misura e griglia
 let currentUnit = "mm";         // "mm", "cm", "px"
 let pixelsPerUnit = 3.7795;     // 1 mm ≈ 3.7795 px (standard 96dpi)
+
+let dpiMonitor2 = 127; // pixel per pollice monitor macbook 14'' (254 nativa)
+let dpiMonitor = 67; //102; // pixel per pollice monitor BenQ PD3220U ()
 //let gridStep = 10;         // Passo della griglia in unità correnti
 
+let pxPerMM = dpiMonitor / 25.4;
 
 // Visibilità elementi
 let showGrid = true;
@@ -39,7 +43,7 @@ let nextElementId = 1;
 // ======= INIZIO: Utility Stato =======
 
 function generateElementId() {
-  return `elem${nextElementId++}`;
+  return nextElementId++;
 }
 
 // === Utility: conversione unità → pixel ===
@@ -81,5 +85,20 @@ function updateElement(id, newProps) {
 function deleteElement(id) {
   elements = elements.filter(el => el.id !== id);
 }
+
+// === DEFAULT STYLE SETTINGS ===
+const defaultFillStyle = {
+  fill: 'none',
+  fillOpacity: 1.0
+};
+
+const defaultStrokeStyle = {
+  stroke: '#000000',
+  strokeWidth: 1,
+  strokeOpacity: 1.0,
+  strokeDasharray: 'none',  // es: '5,5' per tratteggiato
+  strokeLinecap: 'butt',    // butt, round, square
+  strokeLinejoin: 'miter'   // miter, round, bevel
+};
 
 // ======= FINE: Utility Stato =======

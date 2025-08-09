@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Editor vettoriale 2D</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="palette.css" />
+  <!--link rel="stylesheet" href="palette.css" /-->
 </head>
 <body>
 
@@ -17,7 +17,7 @@
     <div class="svg-container">
       <svg id="canvas" xmlns="http://www.w3.org/2000/svg">
         <!-- Gruppo principale soggetto a pan e zoom -->
-        <g id="workspaceGroup"></g>
+        <!--g id="workspaceGroup"></g-->
       </svg>
     </div>
 
@@ -27,6 +27,7 @@
 
   <!-- Script principali -->
   <script src="state.js"></script>     <!-- Gestione stato globale -->
+  <script src="graphics.js"></script> <!-- elementi grafici -->
   <script src="drawing.js"></script>   <!-- Disegno della scena -->
   <script src="interactions.js"></script> <!-- Pan e zoom ecc. -->
   <script src="palette.js"></script>   <!-- Gestione palette -->
@@ -42,5 +43,50 @@
     window.addEventListener("DOMContentLoaded", initApp);
   </script>
  
+<!-- Palette di disegno in basso -->
+<!-- Inizio Palette di Disegno -->
+<div id="drawing-palette" class="draggable-palette">
+  <div id="paletteHeader" class="paletteH-header">
+    <svg class="drag-icon" width="16" height="16" viewBox="0 0 20 20" fill="white" xmlns="http://www.w3.org/2000/svg">
+      <rect y="4" width="20" height="2"/>
+      <rect y="9" width="20" height="2"/>
+      <rect y="14" width="20" height="2"/>
+    </svg>
+  </div>
+  <button id="center-origin-btn" title="Riporta l'origine al centro">
+    <svg width="24" height="24" viewBox="0 0 24 24" info="Freccia stilizzata (esempio semplificato)">
+      <line x1="2" y1="12" x2="22" y2="12" stroke="black" stroke-width="2"/>
+      <polygon points="18,8 22,12 18,16" fill="black"/>
+    </svg>
+  </button>
+
+  <!-- Selettore forma -->
+  <select id="shape-select" title="Seleziona la forma (c, a, l, r, e)">
+    <option value="line">Linea (L)</option>
+    <option value="circle">Cerchio (C)</option>
+    <option value="arc">Arco (A)</option>
+    <option value="rect">Rettangolo (R)</option>
+    <option value="ellipse">Ellisse (E)</option>
+  </select>
+
+
+  <!-- Parametri forma dinamici da inserire dinamicamente-->
+  <div id="shape-params"></div>
+  
+
+  <!-- Pulsante per aggiungere la forma -->
+
+  <button id="add-shape-btn" title="Aggiungi la forma al disegno">Aggiungi</button>
+ 
+  <!-- Checkbox per disegnare dall'ultimo punto -->
+   
+  <label>
+    <input type="checkbox" id="draw-from-last-point" />
+    Disegna dal punto precedente
+  </label>
+</div>
+<script src="drawing-palette.js"></script>
+
+<!-- Fine Palette di Disegno -->
 </body>
 </html>

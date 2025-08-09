@@ -1,0 +1,329 @@
+
+
+<project>
+    <file name="drawing.js" type="javascript">
+        <description>Contiene funzioni per inizializzare e disegnare elementi SVG su una canvas, comprese griglia, assi cartesiani e forme definite dall'utente.</description>
+        <functions>
+            <function>
+            <name>initDrawingCanvas</name>
+            <description>Inizializza la canvas SVG, imposta dimensioni e crea il gruppo principale &lt;g&gt; con trasformazioni di pan e zoom.</description>
+            </function>
+            <function>
+            <name>renderCanvas</name>
+            <description>Funzione principale di rendering: cancella e ridisegna la canvas in base a griglia, assi e elementi utente.</description>
+            </function>
+            <function>
+            <name>drawGrid</name>
+            <description>Disegna la griglia metrica sulla canvas SVG, in funzione di zoom e offset correnti.</description>
+            </function>
+            <function>
+            <name>drawAxes</name>
+            <description>Disegna gli assi cartesiani con origine in basso a sinistra, con frecce direzionali colorate.</description>
+            </function>
+            <function>
+            <name>drawElements</name>
+            <description>Itera sull'array globale 'elements' e disegna ogni forma visibile con la funzione specifica.</description>
+            </function>
+            <function>
+            <name>drawLine</name>
+            <description>Disegna una linea SVG da (x1,y1) a (x2,y2) usando pan e zoom correnti.</description>
+            </function>
+            <function>
+            <name>drawEllipseOrCircle</name>
+            <description>Disegna un cerchio o un'ellisse, usando rx/ry o r e applicando zoom e offset.</description>
+            </function>
+            <function>
+            <name>drawArc</name>
+            <description>Disegna un arco circolare tramite elemento SVG &lt;path&gt;, specificando centro, raggio e angoli.</description>
+            </function>
+        </functions>
+        <variables>
+            <variable>
+            <name>svg</name>
+            <description>Elemento SVG principale della canvas.</description>
+            </variable>
+            <variable>
+            <name>g</name>
+            <description>Gruppo SVG (&lt;g&gt;) usato per applicare trasformazioni di zoom e pan.</description>
+            </variable>
+            <variable>
+            <name>canvasWidth</name>
+            <description>Larghezza della canvas SVG (dipende da impostazioni globali).</description>
+            </variable>
+            <variable>
+            <name>canvasHeight</name>
+            <description>Altezza della canvas SVG (dipende da impostazioni globali).</description>
+            </variable>
+            <variable>
+            <name>canvasOffsetX</name>
+            <description>Offset orizzontale (pan) applicato alla canvas.</description>
+            </variable>
+            <variable>
+            <name>canvasOffsetY</name>
+            <description>Offset verticale (pan) applicato alla canvas.</description>
+            </variable>
+            <variable>
+            <name>canvasZoomFactor</name>
+            <description>Fattore di zoom applicato alla canvas SVG.</description>
+            </variable>
+            <variable>
+            <name>showGrid</name>
+            <description>Booleano che indica se la griglia deve essere visualizzata.</description>
+            </variable>
+            <variable>
+            <name>gridSpacing</name>
+            <description>Distanza tra le linee della griglia, in unità logiche.</description>
+            </variable>
+            <variable>
+            <name>showAxes</name>
+            <description>Booleano che controlla la visualizzazione degli assi cartesiani.</description>
+            </variable>
+            <variable>
+            <name>elements</name>
+            <description>Array contenente tutti gli oggetti geometrici disegnati dall'utente.</description>
+            </variable>
+            <variable>
+            <name>zoomFactor</name>
+            <description>Alias (forse ridondante) del fattore di zoom, usato in alcune funzioni per compatibilità.</description>
+            </variable>
+        </variables>
+    </file>
+
+    <file name="state.js" type="javascript">
+    <description>Definisce lo stato globale dell'applicazione e fornisce funzioni utility per la gestione degli elementi disegnati.</description>
+
+    <variables>
+        <var name="canvasOffsetX" type="number">
+        <description>Offset orizzontale del canvas per il pan</description>
+        <used-in>drawing.js, interactions.js</used-in>
+        </var>
+        <var name="canvasOffsetY" type="number">
+        <description>Offset verticale del canvas per il pan</description>
+        <used-in>drawing.js, interactions.js</used-in>
+        </var>
+        <var name="canvasZoomFactor" type="number">
+        <description>Fattore di zoom globale della canvas</description>
+        <used-in>drawing.js, interactions.js</used-in>
+        </var>
+        <var name="canvasWidth" type="number">
+        <description>Larghezza del canvas (basata su finestra)</description>
+        <used-in>none</used-in>
+        </var>
+        <var name="canvasHeight" type="number">
+        <description>Altezza del canvas (basata su finestra)</description>
+        <used-in>none</used-in>
+        </var>
+        <var name="currentUnit" type="string">
+        <description>Unità di misura selezionata: mm, cm o px</description>
+        <used-in>drawing.js</used-in>
+        </var>
+        <var name="pixelsPerUnit" type="number">
+        <description>Rapporto di conversione unità → pixel</description>
+        <used-in>drawing.js</used-in>
+        </var>
+        <var name="showGrid" type="boolean">
+        <description>Controlla la visibilità della griglia</description>
+        <used-in>drawing.js</used-in>
+        </var>
+        <var name="gridSpacing" type="number">
+        <description>Spaziatura della griglia in unità</description>
+        <used-in>drawing.js</used-in>
+        </var>
+        <var name="showAxes" type="boolean">
+        <description>Controlla la visibilità degli assi cartesiani</description>
+        <used-in>drawing.js</used-in>
+        </var>
+        <var name="isPanning" type="boolean">
+        <description>Indica se è in corso un'operazione di pan</description>
+        <used-in>interactions.js</used-in>
+        </var>
+        <var name="startPan" type="object">
+        <description>Coordinata iniziale del pan (x, y)</description>
+        <used-in>interactions.js</used-in>
+        </var>
+        <var name="elements" type="array">
+        <description>Contiene tutti gli elementi disegnati dall'utente</description>
+        <used-in>drawing.js, palette.js, editor.js</used-in>
+        </var>
+        <var name="selectedElementIndex" type="number">
+        <description>Indice dell'elemento attualmente selezionato</description>
+        <used-in>palette.js</used-in>
+        </var>
+        <var name="nextElementId" type="number">
+        <description>ID incrementale per i nuovi elementi</description>
+        <used-in>state.js</used-in>
+        </var>
+    </variables>
+
+    <functions>
+        <fn name="generateElementId">
+        <description>Restituisce un nuovo ID univoco per un elemento</description>
+        <used-in>addElement</used-in>
+        </fn>
+        <fn name="getGridStepInPixels">
+        <description>Restituisce il passo della griglia in pixel</description>
+        <used-in>drawing.js</used-in>
+        </fn>
+        <fn name="resetState">
+        <description>Ripristina lo stato globale ai valori iniziali</description>
+        <used-in>palette.js</used-in>
+        </fn>
+        <fn name="addElement">
+        <description>Aggiunge un nuovo elemento all'array globale</description>
+        <used-in>drawing-palette.js</used-in>
+        </fn>
+        <fn name="getElementById">
+        <description>Restituisce un elemento dato il suo ID</description>
+        <used-in>palette.js, editor.js</used-in>
+        </fn>
+        <fn name="updateElement">
+        <description>Aggiorna le proprietà di un elemento</description>
+        <used-in>palette.js, editor.js</used-in>
+        </fn>
+        <fn name="deleteElement">
+        <description>Rimuove un elemento dall'array globale</description>
+        <used-in>palette.js</used-in>
+        </fn>
+    </functions>
+    </file>
+
+    <file name="interactions.js" type="javascript">
+    <description>Gestisce le interazioni dell’utente con la canvas: pan e zoom con mouse.</description>
+
+    <variables>
+        <var name="canvas" type="HTMLElement">
+        <description>Elemento canvas su cui vengono ascoltati gli eventi di input</description>
+        <defined-in>interactions.js</defined-in>
+        <used-in>interactions.js</used-in>
+        </var>
+        <var name="isPanning" type="boolean">
+        <description>Indica se l’utente sta trascinando la canvas</description>
+        <defined-in>state.js</defined-in>
+        <used-in>interactions.js</used-in>
+        </var>
+        <var name="startPan" type="object">
+        <description>Coordinate iniziali del pan</description>
+        <defined-in>state.js</defined-in>
+        <used-in>interactions.js</used-in>
+        </var>
+        <var name="canvasOffsetX" type="number">
+        <description>Offset orizzontale del canvas</description>
+        <defined-in>state.js</defined-in>
+        <used-in>interactions.js</used-in>
+        </var>
+        <var name="canvasOffsetY" type="number">
+        <description>Offset verticale del canvas</description>
+        <defined-in>state.js</defined-in>
+        <used-in>interactions.js</used-in>
+        </var>
+        <var name="canvasZoomFactor" type="number">
+        <description>Fattore di zoom corrente</description>
+        <defined-in>state.js</defined-in>
+        <used-in>interactions.js</used-in>
+        </var>
+    </variables>
+
+    <functions>
+        <fn name="renderCanvas">
+        <description>Ridisegna la canvas con i parametri attuali</description>
+        <defined-in>drawing.js</defined-in>
+        <used-in>interactions.js</used-in>
+        </fn>
+        <fn name="updateZoomDisplay">
+        <description>Aggiorna l'interfaccia grafica con il valore corrente dello zoom</description>
+        <defined-in>palette.js</defined-in>
+        <used-in>interactions.js</used-in>
+        </fn>
+    </functions>
+    </file>
+
+    <file name="palette.js" type="script">
+    <description>Gestisce i controlli dell'interfaccia utente per la palette, il caricamento dinamico di palette.html, l'interazione con gli elementi della palette e la lista degli oggetti disegnati.</description>
+    <functions>
+        <function name="loadPalette" />
+        <function name="initializePaletteInteractions" />
+        <function name="initPalette" />
+        <function name="renderObjectList" />
+        <function name="renderSelectedShapeProperties" />
+        <function name="makePaletteDraggable" />
+        <function name="updateZoomDisplay" />
+    </functions>
+    <variables>
+        <variable name="currentUnit" type="global" />
+        <variable name="showGrid" type="global" />
+        <variable name="showAxes" type="global" />
+        <variable name="gridSpacing" type="global" />
+        <variable name="canvasZoomFactor" type="global" />
+        <variable name="selectedShapeIndex" type="global" />
+        <variable name="shapes" type="global" />
+    </variables>
+    <elements>
+        <element id="palette-container" />
+        <element id="unitSelect" />
+        <element id="showGrid" />
+        <element id="showAxes" />
+        <element id="gridSize" />
+        <element id="zoomIn" />
+        <element id="zoomOut" />
+        <element id="zoomReset" />
+        <element id="zoomFactorDisplay" />
+        <element id="objectList" />
+        <element id="shapeProperties" />
+        <element id="palette" />
+    </elements>
+    </file>
+
+    <file name="drawing-palette.js" type="script">
+    <description>
+        Gestisce la palette di disegno in basso: trascinamento, selezione forma, scorciatoie da tastiera, parametri specifici per ogni forma, checkbox per disegnare dal punto precedente e centramento dell'origine.
+    </description>
+    <functions>
+        <function name="updateShapeParams" />
+    </functions>
+    <variables>
+        <variable name="selectedShapeType" type="global" />
+        <variable name="drawFromLastPoint" type="global" />
+        <variable name="isDragging" type="local" />
+        <variable name="offsetX" type="local" />
+        <variable name="offsetY" type="local" />
+    </variables>
+    <elements>
+        <element id="drawing-palette" />
+        <element id="shape-select" />
+        <element id="shape-params" />
+        <element id="draw-from-last-point" />
+        <element id="center-origin-btn" />
+    </elements>
+    </file>
+
+
+
+    <file name="styles.css" type="style">
+        <description>Definisce lo stile visivo generale della canvas e delle palette.</description>
+        <class name="app-container" role="contenitore principale a schermo intero" />
+        <class name="svg-container" role="contenitore SVG centrato" />
+        <id name="canvas" role="elemento canvas principale (forse inutile)" />
+        <class name="palette-container" role="contenitore palette laterale" />
+        <class name="palette-header" role="intestazione trascinabile della palette" />
+        <class name="palette-section" role="sezioni della palette comprimibili" />
+        <class name="section-header" parent=".palette-section" />
+        <class name="section-content" parent=".palette-section" />
+        <class name="drag-icon" role="icona di trascinamento" />
+        <class name="short-number-4" role="input breve 4 caratteri" />
+        <class name="short-number-6" role="input breve 6 caratteri" />
+        <class name="short-number-8" role="input breve 8 caratteri" />
+        <id name="element-list" role="lista elementi disegnati" />
+        <selector name="#element-list li" />
+        <selector name="#element-list li:hover" />
+        <selector name="#element-list li.selected" />
+        <selector name="button" role="stile pulsanti generici" />
+        <class name="zoom-display" role="testo zoom corrente" />
+        <id name="drawing-palette" role="palette di disegno inferiore" />
+        <id name="center-origin-button" role="pulsante centra origine" />
+        <id name="shape-select" role="selettore forma" />
+        <id name="shape-params" role="contenitore parametri forma" />
+        <id name="use-last-point" role="checkbox per usare ultimo punto" />
+    </file>
+
+</project>
+

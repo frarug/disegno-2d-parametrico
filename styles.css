@@ -41,6 +41,13 @@ body {
     box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     resize: both;
+    font-size: small;
+  }
+
+  .palette-container input,
+  .palette-container select,
+  .palette-container textarea {
+    font-size: small !important; /* o ad esempio 0.8rem, 12px, ecc */
   }
   
   .palette-header {
@@ -56,11 +63,56 @@ body {
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
   }
+
+  .paletteH-header {
+    background-color: #444;
+    color: white;
+    padding: 6px 10px;
+    font-weight: bold;
+    cursor: move;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+  }
   
   .palette-section {
     border-top: 1px solid #ccc;
   }
+
+  .drag-icon {
+    margin-right: 0.5em;
+    cursor: move;
+    vertical-align: middle;
+  }
+
+  /* INIZIO: Sezioni comprimibili */
+.palette-section .section-header {
+    background-color: #ddd;
+    margin: 0;
+    padding: 0.2em;
+    cursor: pointer;
+    border-top: 1px solid #ccc;
+    font-size: 0.8em;
+  }
   
+  .palette-section .section-content {
+    padding: 0.5em;
+    font-size: 0.8em;
+  }
+  
+  .palette-section.collapsed .section-content {
+    display: none;
+  }
+/* FINE: Sezioni comprimibili */
+  
+  .short-number-4 { width: 4ch; }
+  .short-number-6 { width: 6ch; }
+  .short-number-8 { width: 8ch; }
+
+/*
   .palette-section summary {
     background-color: #ddd;
     padding: 4px 10px;
@@ -80,12 +132,14 @@ body {
   .palette-content {
     padding: 8px 10px;
   }
-  
+  */
+
   input[type="number"].short {
     width: 5ch;
   }
   
   /* INIZIO: Lista elementi disegnati */
+  /*
   #element-list {
     list-style: none;
     padding: 0;
@@ -105,6 +159,50 @@ body {
   #element-list li.selected {
     background-color: #b3d4fc;
   }
+*/
+
+  #element-list th:last-child,
+  #element-list td:last-child {
+    text-align: right;  /* sposta contenuto colonna a destra */
+    width: 80px;        /* larghezza fissa per la colonna visibile */
+    white-space: nowrap; /* evita che il contenuto vada a capo */
+  }
+
+  #element-list {
+    width: 100%;
+    border-collapse: collapse; /* elimina spazi tra celle */
+    margin: 0;
+    padding: 0;
+    font-family: inherit;
+    font-size: 11px;
+    table-layout: fixed;
+  }
+  
+  #element-list thead th {
+    background-color: #f0f0f0;
+    padding: 6px 8px;
+    border-bottom: 2px solid #ccc;
+    text-align: left;
+  }
+  
+  #element-list tbody tr {
+    border-bottom: 1px solid #ccc;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  #element-list tbody tr:hover {
+    background-color: #e0e0e0;
+  }
+  
+  #element-list tbody tr.selected {
+    background-color: #b3d4fc;
+  }
+  
+  #element-list tbody td {
+    padding: 6px 8px;
+    vertical-align: middle;
+  }
   
   /* Pulsanti */
   button {
@@ -112,6 +210,7 @@ body {
     padding: 4px 8px;
     font-size: 0.9em;
     cursor: pointer;
+    border-radius: 8px 8px 8px 8px;
   }
   
   button:hover {
@@ -122,4 +221,74 @@ body {
     font-weight: normal;
     font-size: 0.9em;
     margin-left: 6px;
+  }
+
+  /* --- PALETTE DISEGNO --- */
+#drawing-palette {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 850px;
+    height: 50px;
+    background-color: #f0f0f0;
+    border: 1px solid #aaa;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    /*
+    align-items: center;
+    justify-content: space-between;
+    */
+    padding: 0px 0px;
+    font-family: sans-serif;
+    font-size: small;
+    z-index: 1001;
+  }
+  
+  /* Zona di trascinamento */
+  #drawing-palette.dragging {
+    opacity: 0.85;
+    cursor: grabbing;
+  }
+  
+  /* Pulsante centro origine */
+  #center-origin-button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background-color: #d0d0d0;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Selettore forma */
+  #shape-select {
+    font-size: small;
+    padding: 4px;
+    border-radius: 4px;
+    border: 1px solid #aaa;
+    background-color: white;
+  }
+  
+  /* Parametri dinamici */
+  #shape-params {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  
+  #shape-params input {
+    width: 50px;
+    padding: 2px;
+    font-size: small;
+  }
+  
+  /* Checkbox opzione ultimo punto */
+  #use-last-point {
+    margin-left: 8px;
+    cursor: pointer;
   }
