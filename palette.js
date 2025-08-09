@@ -124,8 +124,8 @@ function initPalette() {
 }
 
   
-  // Gestione lista oggetti disegnati (array shapes)
-  function renderObjectList() {
+// Gestione lista oggetti disegnati (array shapes)
+function renderObjectList() {
     const listContainer = document.getElementById("objectList");
     console.warn(listContainer);
     if(listContainer){
@@ -147,9 +147,9 @@ function initPalette() {
         });
 
     }
-  }
+}
 
-  function updateElementsOld() {
+function updateElementsOld() {
     const listContainer = document.getElementById("element-list");
     listContainer.innerHTML = ""; // svuota la lista
   
@@ -169,8 +169,8 @@ function initPalette() {
   
       listContainer.appendChild(listItem);
     }
-  }
-  function updateElements() {
+}
+function updateElements() {
     const tbody = document.querySelector("#element-list tbody");
     tbody.innerHTML = ""; // Svuota
   
@@ -205,23 +205,23 @@ function initPalette() {
   
       tbody.appendChild(row);
     }
-  }
+}
 
-  function selectElementById(id) {
+function selectElementById(id) {
     const selected = elements.find(el => el.id === id);
     if (selected) {
       console.log("Elemento selezionato:", selected);
       showElementProperties(id);
     }
-  }
+}
   
-  // Mostra/modifica proprietà forma selezionata
+// Mostra/modifica proprietà forma selezionata
 
-  function showElementProperties(elementId) {
+function showElementProperties(elementId) {
     const element = elements.find(el => el.id === elementId);
     if (!element) {
-      console.warn("Elemento non trovato:", elementId);
-      return;
+        console.warn("Elemento non trovato:", elementId);
+        return;
     }
   
     const propertiesContainer = document.getElementById("properties-content");
@@ -229,86 +229,107 @@ function initPalette() {
   
     // Creiamo le sezioni base con solo i titoli per ora
     const sections = [
-      { id: "position-size", title: "Posizione e Dimensioni" },
-      { id: "fill", title: "Riempimento" },
-      { id: "stroke", title: "Linea" }
+        { id: "position-size", title: "Posizione e Dimensioni" },
+        { id: "fill", title: "Riempimento" },
+        { id: "stroke", title: "Linea" }
     ];
   
     const elemsById = {};
 
     for (const sec of sections) {
-      const sectionEl = document.createElement("div");
-      sectionEl.id = sec.id;
-      sectionEl.classList.add("property-section");
-  
-      const header = document.createElement("h4");
-      header.textContent = sec.title;
-      sectionEl.appendChild(header);
-  
-      propertiesContainer.appendChild(sectionEl);
-      elemsById[sec.id] = sectionEl;  // <-- salva il riferimento nel dizionario
+        const sectionEl = document.createElement("div");
+        sectionEl.id = sec.id;
+        sectionEl.classList.add("property-section");
+    
+        const header = document.createElement("h4");
+        header.textContent = sec.title;
+        sectionEl.appendChild(header);
+    
+        propertiesContainer.appendChild(sectionEl);
+        elemsById[sec.id] = sectionEl;  // <-- salva il riferimento nel dizionario
     }
     // --- Posizione e Dimensioni ---
     if (element.type === "rect") {
-    // x
-    const inputX = createNumberInput("X", element.x, val => {
-      element.x = val; 
-      redraw();
-    });
-    console.log(inputX);
-    elemsById["position-size"].appendChild(inputX);
+        // x
+        const inputX = createNumberInput("X", element.x, val => {
+            element.x = val; 
+            renderCanvas();
+        });
+        elemsById["position-size"].appendChild(inputX);
 
-    // y
-    const inputY = createNumberInput("Y", element.y, val => {
-      element.y = val;
-      redraw();
-    });
-    elemsById["position-size"].appendChild(inputY);
+        // y
+        const inputY = createNumberInput("Y", element.y, val => {
+          element.y = val;
+          renderCanvas();
+        });
+        elemsById["position-size"].appendChild(inputY);
 
-    // width
-    const inputWidth = createNumberInput("Larghezza", element.width, val => {
-      element.width = val;
-      redraw();
-    });
-    elemsById["position-size"].appendChild(inputWidth);
+        // width
+        const inputWidth = createNumberInput("Larghezza", element.width, val => {
+          element.width = val;
+          renderCanvas();
+        });
+        elemsById["position-size"].appendChild(inputWidth);
 
-    // height
-    const inputHeight = createNumberInput("Altezza", element.height, val => {
-      element.height = val;
-      redraw();
-    });
-    elemsById["position-size"].appendChild(inputHeight);
+        // height
+        const inputHeight = createNumberInput("Altezza", element.height, val => {
+          element.height = val;
+          renderCanvas();
+        });
+        elemsById["position-size"].appendChild(inputHeight);
+    }
+    // --- Riempimento ---
+    if (element.type !== "line") {
+        // Fill (colore)
+        const inputFill = createColorInput("Riempimento", element.fillStyle.fill || element.fill, val => {
+          if (typeof element.fillStyle === "object") {
+              element.fillStyle.fill = val;
+          } else {
+              element.fill = val;
+          }
+          renderCanvas();
+        });
+        elemsById["fill"].appendChild(inputFill);
 
-    // Fill (colore)
-    const inputFill = createColorInput("Riempimento", element.fill.fill || element.fill, val => {
-      if (typeof element.fill === "object") {
-        element.fill.fill = val;
-      } else {
-        element.fill = val;
-      }
-      redraw();
-    });
-    elemsById["fill"].appendChild(inputFill);
+        // Fill (opacità)
+        const inputFillOpacity = createNumberInput("Opacità", 
+          (element.fillStyle.fillOpacity !== undefined ? element.fillStyle.fillOpacity : 1), 
+          val => {
+              val = Math.max(0, Math.min(1, val));
+              if (typeof element.fillStyle === "object") {
+                  element.fillStyle.fillOpacity = val;  // qui fillOpacity
+              } else {
+                  element.fillStyle = { fill: element.fillStyle, fillOpacity: val }; // qui anche
+              }
+              renderCanvas();
+          }
+        );
+        const inputElement = inputFillOpacity.querySelector("input");
+        inputElement.min = 0;
+        inputElement.max = 1;
+        inputElement.step = 0.05;
+        elemsById["fill"].appendChild(inputFillOpacity);
+    }
 
     // Stroke (colore)
-    const inputStroke = createColorInput("Colore linea", element.stroke.stroke || element.stroke, val => {
-      if (typeof element.stroke === "object") {
-        element.stroke.stroke = val;
+    const inputStroke = createColorInput("Colore linea", element.strokeStyle.stroke || element.stroke, val => {
+      if (typeof element.strokeStyle === "object") {
+        element.strokeStyle.stroke = val;
       } else {
         element.stroke = val;
       }
-      redraw();
+      renderCanvas();
     });
     elemsById["stroke"].appendChild(inputStroke);
 
     // Stroke Width (numero)
-    const inputStrokeWidth = createNumberInput("Spessore linea", element.stroke.strokeWidth || element.strokeWidth, val => {
-      if (typeof element.stroke === "object") {
-        element.stroke.strokeWidth = val;
-      } else {
-        element.strokeWidth = val;
-      }
-      redraw();
+    const inputStrokeWidth = createNumberInput("Spessore linea", element.strokeStyle.strokeWidth || element.strokeWidth, val => {
+        if (typeof element.strokeStyle === "object") {
+            element.strokeStyle.strokeWidth = val;
+        } else {
+            element.strokeWidth = val;
+        }
+        renderCanvas();
     });
     elemsById["stroke"].appendChild(inputStrokeWidth);
 
@@ -326,7 +347,7 @@ function initPalette() {
       const input = document.createElement("input");
       input.type = "number";
       input.value = initialValue;
-      input.step = "any";
+     //input.step = "any";
       input.addEventListener("input", e => onChange(parseFloat(e.target.value)));
       container.appendChild(input);
 
@@ -349,11 +370,10 @@ function initPalette() {
 
       return container;
     }
-  }
 }
 
 
-  function renderSelectedShapePropertiesOld() {
+function renderSelectedShapePropertiesOld() {
     const propContainer = document.getElementById("shapeProperties");
     propContainer.innerHTML = "";
   
@@ -404,7 +424,7 @@ function initPalette() {
       propContainer.appendChild(label);
       propContainer.appendChild(document.createElement("br"));
     });
-  }
+}
   
 
  

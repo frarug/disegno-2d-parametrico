@@ -64,3 +64,48 @@ function createDragIcon(width, height, color = "white") {
   
     return svg;
   }
+
+  function createColorPicker(labelText, initialColor, onChange) {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("color-picker-wrapper");
+
+    // Etichetta
+    const label = document.createElement("label");
+    label.textContent = labelText;
+    label.style.display = "block";
+    wrapper.appendChild(label);
+
+    // Input color
+    const colorInput = document.createElement("input");
+    colorInput.type = "color";
+    colorInput.value = initialColor || "#000000";
+
+    // Input testo esadecimale
+    const textInput = document.createElement("input");
+    textInput.type = "text";
+    textInput.value = initialColor || "#000000";
+    textInput.maxLength = 7; // "#RRGGBB"
+    textInput.style.width = "80px";
+    textInput.style.marginLeft = "5px";
+
+    // Sincronizzazione color → text
+    colorInput.addEventListener("input", () => {
+        textInput.value = colorInput.value;
+        if (onChange) onChange(colorInput.value);
+    });
+
+    // Sincronizzazione text → color
+    textInput.addEventListener("input", () => {
+        const val = textInput.value;
+        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+            colorInput.value = val;
+            if (onChange) onChange(val);
+        }
+    });
+
+    // Aggiunta al wrapper
+    wrapper.appendChild(colorInput);
+    wrapper.appendChild(textInput);
+
+    return wrapper;
+}
