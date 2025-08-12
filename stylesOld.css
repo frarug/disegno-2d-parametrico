@@ -1,71 +1,76 @@
-/* ===============================
-   STILI GENERALI CANVAS
-==================================*/
+/* INIZIO: Stili generali canvas */
 body {
     margin: 0;
-    overflow: hidden;
+    padding: 0;
+    /*overflow: hidden;*/
+    background-color: #979797;
     font-family: sans-serif;
   }
   
   .app-container {
-    width: 100vw;
-    height: 100vh;
+    width: 50vw;
+    height: 50vh;
     position: relative;
+    background-color: #979797;
+    border: 1cm solid red;
   }
   
   .svg-container {
-    width: 100%;
+    width: 50%;
     height: 100%;
+    /*
     background-color: #979797;
     display: flex;
     justify-content: center;
     align-items: center;
+    */
   }
   
   #canvas {
-    background-color: white;
-    display: block;
+    background-color: rgb(255, 255, 255);
+    position: relative;
+    /*display: block;*/
   }
-  
-  /* ===============================
-     PALETTE PRINCIPALE
-  ==================================*/
+  /* FINE: Stili generali canvas */
+
+
+  /* INIZIO: Stili palette */
   .palette-container {
     position: absolute;
     top: 10px;
     left: 10px;
     width: 300px;
     max-height: 90vh;
-    /* overflow-y: auto;  <-- RIMOSSO: impediva lo scroll solo nella sezione */
+    overflow-y: auto;
     background-color: #f0f0f0;
     border: 1px solid #ccc;
-    border-radius: 5px;
+    border-radius: 8px;
     box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     resize: both;
     font-size: small;
   }
-  
+
   .palette-container input,
   .palette-container select,
   .palette-container textarea {
-    font-size: small !important;
+    font-size: small !important; /* o ad esempio 0.8rem, 12px, ecc */
   }
   
   .palette-header {
-    background-color: #444; 
+    background-color: #444;
     color: white;
-    padding: 6px;
+    padding: 6px 10px;
     font-weight: bold;
     cursor: move;
-    /*display: flex;
-    align-items: center;*/
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    user-select: none; /* inibisce la selezione del testo */
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
+    user-select: none;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
   }
-  
+
   .paletteH-header {
     background-color: #444;
     color: white;
@@ -80,23 +85,18 @@ body {
     border-bottom-left-radius: 8px;
   }
   
-  /* ===============================
-     SEZIONI PALETTE
-  ==================================*/
-  /*
-  .palette-section {
-    border-top: 0px solid #ccc;
+  .palette-section {  
+    border-top: 1px solid #ccc;
   }
-    */
-  
-  .drag-icon {
+
+  .drag-icon {   /* l'icona a tre bande */
     margin-right: 0.5em;
     cursor: move;
     vertical-align: middle;
   }
-  
-  /* Sezioni comprimibili */
-  .palette-section .section-header {
+
+  /* INIZIO: Sezioni comprimibili */
+.palette-section .section-header {
     background-color: #ddd;
     margin: 0;
     padding: 0.2em;
@@ -108,37 +108,85 @@ body {
   .palette-section .section-content {
     padding: 0.5em;
     font-size: 0.8em;
+    flex: 0 1 auto;
   }
   
   .palette-section.collapsed .section-content {
     display: none;
   }
-  
-  /* ===============================
-     LISTA OGGETTI CON SCROLL
-  ==================================*/
-   /* Scroll solo nella sezione Oggetti */
+
   .palette-objects-list {
-    max-height: 350px;
-    overflow-y: scroll;
-    overflow-x: hidden;
-    display: block;
-    height: 150px;   /* altezza iniziale */
-    min-height: 100px;   /* limite minimo */
-    resize: vertical;    /* permette il ridimensionamento solo verticale */
+    max-height: 250px;        /* Limite verticale */
+    overflow-y: auto;       /* Scroll sempre visibile */
+    /*overflow-x: hidden;
+    scrollbar-gutter: stable;  Evita che il layout salti quando appare la scrollbar (supportato in browser moderni) 
+    display: block;*/
+  }
+/* FINE: Sezioni comprimibili */
+  
+  .short-number-4 { width: 4ch; }
+  .short-number-6 { width: 6ch; }
+  .short-number-8 { width: 8ch; }
+
+/*
+  .palette-section summary {
+    background-color: #ddd;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-weight: bold;
+    user-select: none;
   }
   
-  /* Scroll solo nella sezione Oggetti 
-  .section-content.palette-objects-list {
-    max-height: 250px;      /* Altezza massima 
-    overflow-y: scroll;       /* Scroll verticale se serve 
-    overflow-x: hidden;     /* Evita scroll orizzontale 
-  }*/
+  .palette-section summary:hover {
+    background-color: #ccc;
+  }
+  
+  .palette-section details[open] summary {
+    background-color: #ccc;
+  }
+  
+  .palette-content {
+    padding: 8px 10px;
+  }
+  */
 
+  input[type="number"].short {
+    width: 5ch;
+  }
+  
+  /* INIZIO: Lista elementi disegnati */
+  /*
+  #element-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  #element-list li {
+    padding: 4px;
+    border-bottom: 1px solid #ccc;
+    cursor: pointer;
+  }
+  
+  #element-list li:hover {
+    background-color: #e0e0e0;
+  }
+  
+  #element-list li.selected {
+    background-color: #b3d4fc;
+  }
+*/
+
+  #element-list th:last-child,
+  #element-list td:last-child {
+    text-align: right;  /* sposta contenuto colonna a destra */
+    width: 80px;        /* larghezza fissa per la colonna visibile */
+    white-space: nowrap; /* evita che il contenuto vada a capo */
+  }
 
   #element-list {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: collapse; /* elimina spazi tra celle */
     margin: 0;
     padding: 0;
     font-family: inherit;
@@ -146,7 +194,7 @@ body {
     table-layout: fixed;
   }
   
-  #element-thead thead th {
+  #element-list thead th {
     background-color: #f0f0f0;
     padding: 6px 8px;
     border-bottom: 2px solid #ccc;
@@ -172,19 +220,27 @@ body {
     vertical-align: middle;
   }
   
-  #element-thead th:last-child,
-  #element-list td:last-child {
-    text-align: right;
-    width: 80px;
-    white-space: nowrap;
+  /* Pulsanti */
+  button {
+    margin: 2px;
+    padding: 4px 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+    border-radius: 8px 8px 8px 8px;
+  }
+  
+  button:hover {
+    background-color: #ddd;
+  }
+  
+  .zoom-display {
+    font-weight: normal;
+    font-size: 0.9em;
+    margin-left: 6px;
   }
 
-  
-  
-  /* ===============================
-     PALETTE DISEGNO IN BASSO
-  ==================================*/
-  #drawing-palette {
+  /* --- PALETTE DISEGNO --- */
+#drawing-palette {
     position: fixed;
     bottom: 0;
     left: 50%;
@@ -196,17 +252,23 @@ body {
     border-radius: 8px 8px 0 0;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
     display: flex;
-    padding: 0;
+    /*
+    align-items: center;
+    justify-content: space-between;
+    */
+    padding: 0px 0px;
     font-family: sans-serif;
     font-size: small;
     z-index: 1001;
   }
   
+  /* Zona di trascinamento */
   #drawing-palette.dragging {
     opacity: 0.85;
     cursor: grabbing;
   }
   
+  /* Pulsante centro origine */
   #center-origin-button {
     width: 32px;
     height: 32px;
@@ -219,6 +281,7 @@ body {
     justify-content: center;
   }
   
+  /* Selettore forma */
   #shape-select {
     font-size: small;
     padding: 4px;
@@ -227,6 +290,7 @@ body {
     background-color: white;
   }
   
+  /* Parametri dinamici */
   #shape-params {
     display: flex;
     gap: 4px;
@@ -239,33 +303,8 @@ body {
     font-size: small;
   }
   
+  /* Checkbox opzione ultimo punto */
   #use-last-point {
     margin-left: 8px;
     cursor: pointer;
-  }
-  
-  /* ===============================
-     UTILITY CLASSI
-  ==================================*/
-  .short-number-4 { width: 4ch; }
-  .short-number-6 { width: 6ch; }
-  .short-number-8 { width: 8ch; }
-  input[type="number"].short { width: 5ch; }
-  
-  button {
-    margin: 2px;
-    padding: 4px 8px;
-    font-size: 0.9em;
-    cursor: pointer;
-    border-radius: 8px;
-  }
-  
-  button:hover {
-    background-color: #ddd;
-  }
-  
-  .zoom-display {
-    font-weight: normal;
-    font-size: 0.9em;
-    margin-left: 6px;
   }

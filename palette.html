@@ -1,8 +1,6 @@
 <div id="palette" class="palette-container">
     <!-- ===== Intestazione trascinabile ===== -->
-    <div id="paletteHeader" class="palette-header">
-        Control Palette
-      </div>
+    <div id="paletteHeader" class="palette-header"> Control Palette </div>
     <!-- ===== Sezione impostazioni canvas ===== -->
     <section class="palette-section">
       <h3 class="section-header">Canvas</h3>
@@ -34,12 +32,15 @@
     <section class="palette-section">
       <h3 class="section-header">Oggetti</h3>
       <div class="section-content">
-        
-      <!--<ul id="element-list" class="element-list"></ul>-->
-      <table id="element-list" style="width: 100%;">
+      <table id="element-thead" style="width: 100%;">
         <thead><tr><th>Nome</th><th>Visibile</th></tr></thead>
+      </table>
+      <div class="palette-objects-list">
+        
+      <table id="element-list" style="width: 100%;">
         <tbody></tbody>
       </table>
+      </div>
       </div>
     </section>
   
@@ -47,7 +48,11 @@
     <section class="palette-section">
       <h3 class="section-header">Proprietà</h3>
       <div class="section-content">
-      <div id="properties-content" class="shape-properties">Nessuna forma selezionata</div>
+      <div id="properties-content" class="shape-properties">
+        <div id="pos&dim-subsection"></div>
+        <div id="fill-subsection"></div>
+        <div id="stroke-subsection"></div>
+      </div>
       </div>
     </section>
   </div>

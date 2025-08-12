@@ -11,7 +11,7 @@
 <body>
 
   <!-- Contenitore principale -->
-  <div id="app-container">
+  <div id="app-container" class="app-container">
 
     <!-- Area di disegno -->
     <div class="svg-container">
@@ -38,6 +38,13 @@
       await loadPalette(); // Carica e inserisce palette.html
       //initPalette();       // Inizializza event listeners in palette.js
       initDrawingCanvas(); // Inizializza SVG e disegno
+      //forme di prova
+      addShapeToCanvas("rect", {x:20, y:16, width:20, height:40, fillStyle:{fill:"#ffaa00", fillOpacity:0.6}});
+      addShapeToCanvas("circle", {cx:3, cy:6, r:40, fillStyle:{fill:"#ffffaa", fillOpacity:0.6}});
+      addShapeToCanvas("line", {x1:3, y1:6, x2:20, y2:40, strokeStyle:{stroke:"#ff0000", strokeWidth:4, strokeOpacity:0.4}});
+      addShapeToCanvas("line", {x1:30, y1:26, x2:50, y2:60, strokeStyle:{stroke:"#ffff00", strokeWidth:2, strokeOpacity:0.8}});
+      addShapeToCanvas("circle", {cx:32, cy:136, r:60, fillStyle:{fill:"#00ffaa", fillOpacity:0.7}});
+      //fine forme di prova
       renderCanvas();
     }
     window.addEventListener("DOMContentLoaded", initApp);

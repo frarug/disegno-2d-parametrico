@@ -4,16 +4,17 @@ let svg, g;
 
 // === Inizio definizione classe Line ===
 class Line {
-    constructor( x1, y1, x2, y2, stroke = defaultStrokeStyle, visible = true) {
+    constructor( x1, y1, x2, y2, strokeStyle, visible = true) {
         this.id = generateElementId();
         this.name = "line"+this.id;
-      this.type = "line";
-      this.x1 = x1;
-      this.y1 = y1;
-      this.x2 = x2;
-      this.y2 = y2;
-      this.strokeStyle = { ...stroke };
-      this.visible = visible;
+        this.type = "line";
+        this.x1 = x1;
+        this.y1 = y1;
+        this.x2 = x2;
+        this.y2 = y2;
+        if (strokeStyle === null || strokeStyle === undefined) this.strokeStyle = defaultStrokeStyle;
+        else this.strokeStyle = strokeStyle;
+        this.visible = visible;
     }
   
     render(svg) {
@@ -31,21 +32,25 @@ class Line {
   }
 // === Inizio definizione classe Rect ===
 class Rect {
-    constructor(x, y, width, height, fillStyle = defaultFillStyle, strokeStyle = defaultStrokeStyle, visible = true) {
+    constructor(x, y, width, height, fillStyle, strokeStyle, visible = true) {
+        console.log(fillStyle);
         this.id = generateElementId();
         this.name = "rect"+this.id;
         this.type = "rect";
-      this.x = x;
-      this.y = y;
-      this.width = width;
-      this.height = height;
-      this.fillStyle = { ...fillStyle };
-      this.strokeStyle = { ...strokeStyle };
-      this.visible = visible;
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        if (fillStyle === null || fillStyle === undefined) this.fillStyle = defaultFillStyle;
+        else this.fillStyle = fillStyle;
+        if (strokeStyle === null || strokeStyle === undefined) this.strokeStyle = defaultFillStyle;
+        else this.strokeStyle = strokeStyle;
+
+        this.visible = visible;
     }
   
     render(svg) {
-        console.log(this);
+        //console.log(this);
       if (!this.visible) return;
       const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       rect.setAttribute("x", this.x);
@@ -62,6 +67,39 @@ class Rect {
     }
   }
   // === Fine definizione classe Rect ===
+  // === Inizio definizione classe Circle ===
+  class Circle {
+    constructor(cx, cy, r, fillStyle, strokeStyle = defaultStrokeStyle, visible = true) {
+        this.id = generateElementId();
+        this.name = "circle"+this.id;
+        this.type = "circle";
+      this.cx = cx;
+      this.cy = cy;
+      this.r = r;
+      //this.fillStyle = { ...fillStyle };
+      this.fillStyle = fillStyle ?? defaultFillStyle;
+      console.log("costruttore", this.fillStyle);
+      this.strokeStyle = { ...strokeStyle };
+      this.visible = visible;
+    }
+  
+    render(svg) {
+        //console.log(this);
+      if (!this.visible) return;
+      const rect = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      rect.setAttribute("cx", this.cx);
+      rect.setAttribute("cy", this.cy); 
+      rect.setAttribute("r", this.r);
+      //fill
+      rect.setAttribute("fill", this.fillStyle.fill || "none");
+      rect.setAttribute("fill-opacity", this.fillStyle.fillOpacity ?? 1);
+      
+      //stroke
+      applyStrokeStyle(rect, this.strokeStyle);
+      svg.appendChild(rect);
+    }
+  }
+
 
 // INIZIO funzioni di utility ===
   function applyStrokeStyle(el, strokeStyle = {}) {
@@ -274,57 +312,86 @@ class Rect {
 
 
   // INIZIO: aggiungi una forma al disegno
-  function addShapeToCanvas(elementType) {
+  function addShapeToCanvas(elementType, paramValues) {
     const svg = document.querySelector("svg");
     const paramsContainer = document.getElementById("shape-params");
     const inputs = paramsContainer.querySelectorAll("input, select");
-    const paramValues = {};
-  
-    inputs.forEach(input => {
-      paramValues[input.name] = input.type === "number" ? parseFloat(input.value) : input.value;
-    });
-  
+    //const paramValues = {};
+    if(paramValues === null || paramValues === undefined){
+        paramValues = {};
+        inputs.forEach(input => {
+            paramValues[input.name] = input.type === "number" ? parseFloat(input.value) : input.value;
+            // qui c'è un errore. paramValues viene riempito con fill e stroke (dagli input)
+            //  ma il fill deve far parte di un fillStyle{fill, fillOpacity} e stroke 
+            // di un strokeStyle{stroke, strokeWidth, ecc}
+        });
+    }
     let newElement = null;
-  
+    console.log("addShapeToCanvas->elementType", elementType);
+    console.log("addShapeToCanvas->parametri passati", paramValues);
+    paramValues.fillStyle == paramValues.fillStyle ?? defaultFillStyle;
+    paramValues.strokeStyle = paramValues.strokeStyle ?? defaultStrokeStyle;
+
     switch (elementType) {
-      case "line":
-        console.log("paramValues:", paramValues);
-        newElement = new Line(
-            parseFloat(paramValues.x1) || 0,
-            parseFloat(paramValues.y1) || 0,
-            parseFloat(paramValues.x2) || 10,
-            parseFloat(paramValues.y2) || 10,
-            {
-            stroke: paramValues.stroke || defaultStrokeStyle.stroke,
-            strokeWidth: parseFloat(paramValues.strokeWidth) || defaultStrokeStyle.strokeWidth,
-            strokeOpacity: 1,
-            strokeDasharray: "none",
-            strokeLinecap: "butt"
-            },
-            true
-        );
-        break;
-      case "rect":
-        //console.log("paramValues:", paramValues);
-        newElement = new Rect(
-            parseFloat(paramValues.x) || 0,
-            parseFloat(paramValues.y) || 0,
-            parseFloat(paramValues.width) || 10,
-            parseFloat(paramValues.height) || 10,
-            {
-              fill: paramValues.fill || defaultFillStyle.fill,
-              fillOpacity: 1
-            },
-            {
-              stroke: paramValues.stroke || defaultStrokeStyle.stroke,
-              strokeWidth: parseFloat(paramValues.strokeWidth) || defaultStrokeStyle.strokeWidth,
-              strokeOpacity: 1,
-              strokeDasharray: "none",
-              strokeLinecap: "butt"
-            },
-            true
-        );
-        break;
+        case "line":
+            console.log("dentro switch:line-> paramValues:", paramValues);
+            console.log("strokeStyle:", paramValues.strokeStyle)
+            newElement = new Line(
+                parseFloat(paramValues.x1) || 0,
+                parseFloat(paramValues.y1) || 0,
+                parseFloat(paramValues.x2) || 10,
+                parseFloat(paramValues.y2) || 10,
+                {
+                stroke: paramValues.strokeStyle.stroke || defaultStrokeStyle.stroke,
+                strokeWidth: parseFloat(paramValues.strokeStyle.strokeWidth) || defaultStrokeStyle.strokeWidth,
+                strokeOpacity: parseFloat(paramValues.strokeStyle.strokeOpacity) || defaultStrokeStyle.strokeOpacity,
+                strokeDasharray: paramValues.strokeStyle.strokeDasharray || defaultStrokeStyle.strokeDasharray,
+                strokeLinecap: paramValues.strokeStyle.strokeLinecap || defaultStrokeStyle.strokeLinecap
+                },
+                true
+            );
+            break;
+        case "rect":
+            //console.log("paramValues:", paramValues.strokeStyle.stroke);
+            newElement = new Rect(
+                parseFloat(paramValues.x) || 0,
+                parseFloat(paramValues.y) || 0,
+                parseFloat(paramValues.width) || 10,
+                parseFloat(paramValues.height) || 10,
+                {
+                    fill: paramValues.fillStyle.fill || defaultFillStyle.fill,
+                    fillOpacity: paramValues.fillStyle.fillOpacity || defaultFillStyle.fillOpacity
+                },
+                {
+                    stroke: paramValues.strokeStyle.stroke ?? defaultStrokeStyle.stroke,
+                    strokeWidth: parseFloat(paramValues.strokeStyle.strokeWidth) ?? defaultStrokeStyle.strokeWidth,
+                    strokeOpacity: 1,
+                    strokeDasharray: "none",
+                    strokeLinecap: "butt"
+                },
+                true
+            );
+            break;
+        case "circle":
+            //console.log("paramValues:", paramValues);
+            newElement = new Circle(
+                parseFloat(paramValues.cx) || 0,
+                parseFloat(paramValues.cy) || 0,
+                parseFloat(paramValues.r) || 10,
+                {
+                    fill: paramValues.fillStyle.fill || defaultFillStyle.fill,
+                    fillOpacity: paramValues.fillStyle.fillOpacity || defaultFillStyle.fillOpacity
+                },
+                {
+                    stroke: paramValues.stroke || defaultStrokeStyle.stroke,
+                    strokeWidth: parseFloat(paramValues.strokeWidth) || defaultStrokeStyle.strokeWidth,
+                    strokeOpacity: 1,
+                    strokeDasharray: "none",
+                    strokeLinecap: "butt"
+                },
+                true
+            );
+            break;
   
       // Altri tipi: case "line", "circle", ecc. (li aggiungerai in seguito)
   

@@ -1,0 +1,57 @@
+<project name="WebappDisegno2D" version="1.0">
+  <description>
+    Webapp modulare per disegno vettoriale 2D con canvas SVG, zoom, pan, griglia cartesiana,
+    due palette (controllo e disegno), e gestione di forme geometriche.
+  </description>
+  <files>
+    <var name="index.html">
+
+  </files>
+
+  <canvas>
+    <svg id="canvas" />
+    <variables>
+      <var name="svg" type="SVGElement" scope="global" />
+      <var name="g" type="SVGGElement" scope="global" />
+      <var name="canvasWidth" type="number" />
+      <var name="canvasHeight" type="number" />
+      <var name="canvasOffsetX" type="number" />
+      <var name="canvasOffsetY" type="number" />
+      <var name="canvasZoomFactor" type="number" />
+      <var name="elements" type="array" />
+      <var name="lastPoint" type="object" />
+    </variables>
+    <functions>
+      <fn name="initDrawingCanvas" />
+      <fn name="renderCanvas" />
+      <fn name="drawGrid" />
+      <fn name="drawAxes" />
+    </functions>
+  </canvas>
+
+  <palette id="control-palette" position="right">
+    <file name="palette.html" />
+    <file name="palette.js" />
+    <file name="palette.css" />
+    <section id="elements-list" purpose="Elenco e modifica degli oggetti disegnati" />
+  </palette>
+
+  <palette id="drawing-palette" position="bottom">
+    <embedded>true</embedded>
+    <class>draggable-palette</class>
+    <elements>
+      <button id="center-origin-btn" description="Riporta l'origine al centro dello schermo" />
+      <select id="shape-select" values="line,circle,arc,rectangle,ellipse" />
+      <div id="shape-params" description="Contenitore dei parametri dinamici per la forma selezionata" />
+      <checkbox id="draw-from-last-point" description="Disegna dal punto precedente" />
+      <button id="add-shape-btn" description="Aggiunge la forma alla canvas" />
+    </elements>
+    <keyboard-shortcuts>
+      <key char="l" action="select line" />
+      <key char="c" action="select circle" />
+      <key char="a" action="select arc" />
+      <key char="r" action="select rectangle" />
+      <key char="e" action="select ellipse" />
+    </keyboard-shortcuts>
+  </palette>
+</project>

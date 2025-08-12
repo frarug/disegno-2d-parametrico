@@ -132,28 +132,37 @@ function updateShapeParams(elementType) {
     let params = [];
   
     switch (elementType) {
-      case "rect":
-        params = [
-          { label: "X", name: "x", type: "number", step: "1", value: 0 },
-          { label: "Y", name: "y", type: "number", step: "1", value: 0 },
-          { label: "Larghezza", name: "width", type: "number", step: "1", value: 10 },
-          { label: "Altezza", name: "height", type: "number", step: "1", value: 10 },
-          { label: "Colore Riempimento", name: "fill", type: "text", value: defaultFillStyle.fill },
-          { label: "Colore Bordo", name: "stroke", type: "text", value: defaultStrokeStyle.stroke },
-          { label: "Spessore Bordo", name: "strokeWidth", type: "number", step: "0.1", value: 1 }
-        ];
-        break;
-      case "line":
+        case "rect":
             params = [
-              { label: "X1", name: "x1", type: "number", step: "1", value: 0 },
-              { label: "Y1", name: "y1", type: "number", step: "1", value: 0 },
-              { label: "X2", name: "x2", type: "number", step: "1", value: 10 },
-              { label: "Y2", name: "y2", type: "number", step: "1", value: 10 },
-              { label: "Colore Linea", name: "stroke", type: "text", value: defaultStrokeStyle.stroke },
-              { label: "Spessore Linea", name: "strokeWidth", type: "number", step: "0.1", value: 1 }
+                { label: "X", name: "x", type: "number", step: "1", value: 0 },
+                { label: "Y", name: "y", type: "number", step: "1", value: 0 },
+                { label: "Larghezza", name: "width", type: "number", step: "1", value: 10 },
+                { label: "Altezza", name: "height", type: "number", step: "1", value: 10 },
+                { label: "Colore Riempimento", name: "fill", type: "text", value: defaultFillStyle.fill },
+                { label: "Colore Bordo", name: "stroke", type: "text", value: defaultStrokeStyle.stroke },
+                { label: "Spessore Bordo", name: "strokeWidth", type: "number", step: "0.1", value: 1 }
             ];
             break;
-      // altri tipi: "line", "circle", ecc.
+        case "line":
+            params = [
+                { label: "X1", name: "x1", type: "number", step: "1", value: 0 },
+                { label: "Y1", name: "y1", type: "number", step: "1", value: 0 },
+                { label: "X2", name: "x2", type: "number", step: "1", value: 10 },
+                { label: "Y2", name: "y2", type: "number", step: "1", value: 10 },
+                { label: "Colore Linea", name: "stroke", type: "text", value: defaultStrokeStyle.stroke },
+                { label: "Spessore Linea", name: "strokeWidth", type: "number", step: "0.1", value: 1 }
+            ];
+            break;
+        case "circle":
+            params = [
+                { label: "Cx", name: "cx", type: "number", step: "1", value: 0 },
+                { label: "Cy", name: "cy", type: "number", step: "1", value: 0 },
+                { label: "r", name: "r", type: "number", step: "1", value: 10 },
+                { label: "Colore Linea", name: "stroke", type: "text", value: defaultStrokeStyle.stroke },
+                { label: "Spessore Linea", name: "strokeWidth", type: "number", step: "0.1", value: 1 }
+            ];
+            break;
+                // altri tipi: "line", "circle", ecc.
   
       default:
         return;

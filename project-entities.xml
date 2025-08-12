@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <file name="drawing-palette.js" type="script">
+    <description>Gestisce la palette inferiore per la creazione delle forme geometriche e le interazioni utente ad essa associate.</description>
+    <function name="updateShapeParams" type="function">
+      <description>Aggiorna dinamicamente i parametri visibili nella palette in base alla forma selezionata.</description>
+    </function>
+    <variable name="selectedShapeType" type="string" scope="global" default="line" />
+    <variable name="drawFromLastPoint" type="boolean" scope="global" default="false" />
+    <variable name="palette" type="element" selector="document.getElementById('drawing-palette')" />
+    <variable name="isDragging" type="boolean" default="false" />
+    <variable name="offsetX" type="number" />
+    <variable name="offsetY" type="number" />
+    <variable name="shapeSelect" type="element" selector="document.getElementById('shape-select')" />
+    <variable name="shapeParamsContainer" type="element" selector="document.getElementById('shape-params')" />
+    <element id="drawing-palette" type="div" role="container palette disegno inferiore" />
+    <element id="shape-select" type="select" role="selettore forma" />
+    <element id="shape-params" type="div" role="contenitore parametri forma" />
+    <element id="draw-from-last-point" type="input" role="checkbox disegno da ultimo punto" />
+    <element id="center-origin-btn" type="button" role="centra origine" />
+  </file>
+
+  <file name="styles.css" type="style">
+    <description>Definisce lo stile visivo generale della canvas e delle palette.</description>
+    <class name="app-container" role="contenitore principale a schermo intero" />
+    <class name="svg-container" role="contenitore SVG centrato" />
+    <id name="canvas" role="elemento canvas principale (forse inutile)" />
+    <class name="palette-container" role="contenitore palette laterale" />
+    <class name="palette-header" role="intestazione trascinabile della palette" />
+    <class name="palette-section" role="sezioni della palette comprimibili" />
+    <class name="section-header" parent=".palette-section" />
+    <class name="section-content" parent=".palette-section" />
+    <class name="drag-icon" role="icona di trascinamento" />
+    <class name="short-number-4" role="input breve 4 caratteri" />
+    <class name="short-number-6" role="input breve 6 caratteri" />
+    <class name="short-number-8" role="input breve 8 caratteri" />
+    <id name="element-list" role="lista elementi disegnati" />
+    <selector name="#element-list li" />
+    <selector name="#element-list li:hover" />
+    <selector name="#element-list li.selected" />
+    <selector name="button" role="stile pulsanti generici" />
+    <class name="zoom-display" role="testo zoom corrente" />
+    <id name="drawing-palette" role="palette di disegno inferiore" />
+    <id name="center-origin-button" role="pulsante centra origine" />
+    <id name="shape-select" role="selettore forma" />
+    <id name="shape-params" role="contenitore parametri forma" />
+    <id name="use-last-point" role="checkbox per usare ultimo punto" />
+  </file>
+</project>
+
+
+<?xml version="1.0" ?>
+<project-entities>
+  <entity>
+    <name>centerOrigin</name>
+    <type>function</type>
+    <defined-in>drawing-palette.js</defined-in>
+    <used-in>drawing-palette.js</used-in>
+    <class>n/a</class>
+    <description>Riporta l'origine delle coordinate al centro della canvas</description>
+  </entity>
+  <entity>
+    <name>setCurrentShape</name>
+    <type>function</type>
+    <defined-in>drawing-palette.js</defined-in>
+    <used-in>drawing-palette.js</used-in>
+    <class>n/a</class>
+    <description>Imposta il tipo di forma geometrica da disegnare</description>
+  </entity>
+  <entity>
+    <name>updateShapeParamsUI</name>
+    <type>function</type>
+    <defined-in>drawing-palette.js</defined-in>
+    <used-in>drawing-palette.js</used-in>
+    <class>n/a</class>
+    <description>Aggiorna i parametri visualizzati nella palette in base alla forma selezionata</description>
+  </entity>
+  <entity>
+    <name>CanvasZoomFactor</name>
+    <type>variable</type>
+    <defined-in>state.js</defined-in>
+    <used-in>palette.js, drawing.js</used-in>
+    <class>n/a</class>
+    <description>Fattore di zoom applicato alla canvas SVG</description>
+  </entity>
+  <entity>
+    <name>CanvasXOffset</name>
+    <type>variable</type>
+    <defined-in>state.js</defined-in>
+    <used-in>palette.js, drawing.js</used-in>
+    <class>n/a</class>
+    <description>Offset orizzontale della canvas SVG</description>
+  </entity>
+  <entity>
+    <name>CanvasYOffset</name>
+    <type>variable</type>
+    <defined-in>state.js</defined-in>
+    <used-in>palette.js, drawing.js</used-in>
+    <class>n/a</class>
+    <description>Offset verticale della canvas SVG</description>
+  </entity>
+</project-entities>

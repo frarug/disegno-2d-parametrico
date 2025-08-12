@@ -25,6 +25,11 @@
     user-select: none;
     border-bottom: 1px solid #aaa;
   }
+
+  .palette-section {
+    margin-bottom: 0px;
+  }
+
   .drag-icon {
     margin-right: 0.5em;
     cursor: move;
@@ -68,9 +73,7 @@
     user-select: none;
   }
   
-  .palette-section {
-    margin-bottom: 0px;
-  }
+
   
   
   .palette-subsection {

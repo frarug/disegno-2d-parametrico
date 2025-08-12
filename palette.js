@@ -125,51 +125,6 @@ function initPalette() {
 
   
 // Gestione lista oggetti disegnati (array shapes)
-function renderObjectList() {
-    const listContainer = document.getElementById("objectList");
-    console.warn(listContainer);
-    if(listContainer){
-        listContainer.innerHTML = ""; // svuota lista
-    
-        shapes.forEach((shape, idx) => {
-        const li = document.createElement("li");
-        li.textContent = `${shape.type} - id: ${idx}`;
-        li.dataset.idx = idx;
-        li.className = (idx === selectedShapeIndex) ? "selected" : "";
-    
-        li.addEventListener("click", () => {
-            selectedShapeIndex = idx;
-            renderObjectList();
-            renderSelectedShapeProperties();
-        });
-    
-        listContainer.appendChild(li);
-        });
-
-    }
-}
-
-function updateElementsOld() {
-    const listContainer = document.getElementById("element-list");
-    listContainer.innerHTML = ""; // svuota la lista
-  
-    // Ciclo inverso per mostrare l'ultimo elemento in cima
-    for (let i = elements.length - 1; i >= 0; i--) {
-      const el = elements[i];
-      console.log(el);
-      const listItem = document.createElement("li");
-  
-      listItem.textContent = el.name || `${el.type} ${el.id}`;
-      listItem.dataset.id = el.id;
-  
-      // (opzionale) Aggiungi comportamento click per selezione
-      listItem.addEventListener("click", () => {
-        selectElementById(el.id); 
-      });
-  
-      listContainer.appendChild(listItem);
-    }
-}
 function updateElements() {
     const tbody = document.querySelector("#element-list tbody");
     tbody.innerHTML = ""; // Svuota
@@ -183,35 +138,50 @@ function updateElements() {
       nameCell.textContent = el.name || `${el.type} ${el.id}`;
       row.appendChild(nameCell);
 
-      row.addEventListener("click", () => {
-        selectElementById(el.id); 
+      row.addEventListener("click", function() {
+        selectedElementIndex = i; // imposti l'indice
+        document.querySelectorAll("#element-list tbody tr")
+                .forEach(tr => tr.classList.remove("selected")); // rimuovi dai precedenti
+        this.classList.add("selected"); // evidenzia questa riga
+        showElementProperties(elements[i].id); // mostra proprietà
       });
-  
+
       // Icona visibilità
       const visCell = document.createElement("td");
       const icon = el.visible ? createCheckIcon(16, 16) : createCrossIcon(16, 16);
-  
       icon.style.cursor = "pointer";
-      icon.addEventListener("click", () => {
+      icon.addEventListener("click", function(event) {
+        event.stopPropagation(); // blocca il click dal raggiungere la <tr>
         el.visible = !el.visible;
         updateElements(); // refresh tabella
+        //updateElementRow(el, visCell);
         renderCanvas();
         // eventuale refresh del disegno
         // drawElements(svgContainer);
       });
-  
+      
+
       visCell.appendChild(icon);
       row.appendChild(visCell);
-  
       tbody.appendChild(row);
     }
+}
+
+function updateElementRow(el, visCell){
+  el.visible = !el.visible;
+  const icon = el.visible ? createCheckIcon(16, 16) : createCrossIcon(16, 16);
+  icon.style.cursor = "pointer";
+  icon.addEventListener("click", updateElementRow(el, visCell));
+  visCell.textContent="";
+  visCell.appendChild(icon);
+  renderCanvas();
 }
 
 function selectElementById(id) {
     const selected = elements.find(el => el.id === id);
     if (selected) {
       console.log("Elemento selezionato:", selected);
-      showElementProperties(id);
+      showElementProperties2(id);
     }
 }
   
@@ -223,7 +193,6 @@ function showElementProperties(elementId) {
         console.warn("Elemento non trovato:", elementId);
         return;
     }
-  
     const propertiesContainer = document.getElementById("properties-content");
     propertiesContainer.innerHTML = "";  // puliamo la sezione proprietà
   
@@ -372,60 +341,98 @@ function showElementProperties(elementId) {
     }
 }
 
+async function showElementProperties2(elementId) {
+  const element = elements.find(el => el.id === elementId);
+  if (!element) return;
 
-function renderSelectedShapePropertiesOld() {
-    const propContainer = document.getElementById("shapeProperties");
-    propContainer.innerHTML = "";
+  // Determina il file HTML da caricare
+  let htmlFile = "";
+  switch(element.type) {
+    case "rect": htmlFile = "palette-dim-rect.html"; break;
+    case "circle": htmlFile = "palette-dim-circle.html"; break;
+    case "arc": htmlFile = "palette-dim-arc.html"; break;
+    case "line": htmlFile = "palette-dim-line.html"; break;
+    case "ellipse": htmlFile = "palette-dim-ellipse.html"; break;
+    // altri tipi...
+  }
+
+  // Carica file HTML nel container pos&dim
+  const container = document.getElementById("pos&dim-subsection");
+  let response = await fetch(htmlFile);
+  let htmlText = await response.text();
+  container.innerHTML = htmlText;
   
-    if (selectedShapeIndex === null || !shapes[selectedShapeIndex]) {
-      propContainer.textContent = "Nessuna forma selezionata";
-      return;
-    }
-  
-    const shape = shapes[selectedShapeIndex];
-  
-    // Per esempio proprietà comuni: colore, spessore
-    const props = [];
-  
-    if (shape.type === "line") {
-      props.push({ name: "x1", value: shape.x1 });
-      props.push({ name: "y1", value: shape.y1 });
-      props.push({ name: "x2", value: shape.x2 });
-      props.push({ name: "y2", value: shape.y2 });
-    } else if (shape.type === "circle") {
-      props.push({ name: "cx", value: shape.cx });
-      props.push({ name: "cy", value: shape.cy });
-      props.push({ name: "r", value: shape.r });
-    }
-    // Aggiungi proprietà per altre forme...
-  
-    props.push({ name: "stroke", value: shape.stroke || "#000000" });
-    props.push({ name: "strokeWidth", value: shape.strokeWidth || 1 });
-  
-    props.forEach((prop) => {
-      const label = document.createElement("label");
-      label.textContent = prop.name;
-      const input = document.createElement("input");
-      input.type = "number";
-      input.value = prop.value;
-      input.step = "any";
-      input.dataset.prop = prop.name;
-  
-      input.addEventListener("change", (e) => {
-        const val = parseFloat(e.target.value);
-        if (!isNaN(val)) {
-          shape[e.target.dataset.prop] = val;
-          renderCanvas();
-          renderObjectList(); // aggiorna lista nel caso cambino proprietà visibili
-        }
-      });
-  
-      label.appendChild(input);
-      propContainer.appendChild(label);
-      propContainer.appendChild(document.createElement("br"));
-    });
-}
-  
+
+  // Ora valorizza gli input in base al tipo e all'elemento
+  if (element.type === "rect") {  //rect
+    container.querySelector("#rect-x").value = element.x;
+    container.querySelector("#rect-y").value = element.y;
+    container.querySelector("#rect-width").value = element.width;
+    container.querySelector("#rect-height").value = element.height;
+    // event listener per aggiornare element
+    container.querySelector("#rect-x").addEventListener("input", e => {element.x = parseFloat(e.target.value);renderCanvas();});
+    container.querySelector("#rect-y").addEventListener("input", e => {element.y = parseFloat(e.target.value);renderCanvas();});
+    container.querySelector("#rect-width").addEventListener("input", e => {element.width = parseFloat(e.target.value); renderCanvas();});
+    container.querySelector("#rect-height").addEventListener("input", e => {element.height = parseFloat(e.target.value); renderCanvas();});
+  } else if (element.type === "circle") { //circle
+    container.querySelector("#circle-cx").value = element.cx;
+    container.querySelector("#circle-cy").value = element.cy;
+    container.querySelector("#circle-r").value = element.r;
+    // event listener per aggiornare element
+    container.querySelector("#circle-cx").addEventListener("input", e => {element.cx = parseFloat(e.target.value);renderCanvas();});
+    container.querySelector("#circle-cy").addEventListener("input", e => {element.cy = parseFloat(e.target.value);renderCanvas();});
+    container.querySelector("#circle-r").addEventListener("input", e => {element.r = parseFloat(e.target.value);renderCanvas();});
+  }if (element.type === "line") { //line
+    container.querySelector("#line-x1").value = element.x1;
+    container.querySelector("#line-y1").value = element.y1;
+    container.querySelector("#line-x2").value = element.x2;
+    container.querySelector("#line-y2").value = element.y2;
+    // event listener per aggiornare element
+    container.querySelector("#line-x1").addEventListener("input", e => {element.x1 = parseFloat(e.target.value);renderCanvas();});
+    container.querySelector("#line-y1").addEventListener("input", e => {element.y1 = parseFloat(e.target.value);renderCanvas();});
+    container.querySelector("#line-x2").addEventListener("input", e => {element.x2 = parseFloat(e.target.value); renderCanvas();});
+    container.querySelector("#line-y2").addEventListener("input", e => {element.y2 = parseFloat(e.target.value); renderCanvas();});
+  }if (element.type === "ellipse") { //ellipse
+    container.querySelector("#ellipse-cx").value = element.cx;
+    container.querySelector("#ellipse-cy").value = element.cy;
+    container.querySelector("#ellipse-rx").value = element.rx;
+    container.querySelector("#ellipse-ry").value = element.ry;
+    // event listener per aggiornare element
+    container.querySelector("#ellipse-cx").addEventListener("input", e => {element.cx = parseFloat(e.target.value);renderCanvas();});
+    container.querySelector("#ellipse-cy").addEventListener("input", e => {element.cy = parseFloat(e.target.value);renderCanvas();});
+    container.querySelector("#ellipse-rx").addEventListener("input", e => {element.rx = parseFloat(e.target.value); renderCanvas();});
+    container.querySelector("#ellipse-ry").addEventListener("input", e => {element.ry = parseFloat(e.target.value); renderCanvas();});
+  }if (element.type === "arc") { //arc
+    container.querySelector("#arc-cx").value = element.cx;
+    container.querySelector("#arc-cy").value = element.cy;
+    container.querySelector("#arc-rx").value = element.rx;
+    container.querySelector("#arc-ry").value = element.ry;
+    container.querySelector("#arc-start").value = element.start;
+    container.querySelector("#arc-end").value = element.end;
+    // event listener per aggiornare element
+    container.querySelector("#arc-cx").addEventListener("input", e => {element.cx = parseFloat(e.target.value);renderCanvas();});
+    container.querySelector("#arc-cy").addEventListener("input", e => {element.cy = parseFloat(e.target.value);renderCanvas();});
+    container.querySelector("#arc-rx").addEventListener("input", e => {element.rx = parseFloat(e.target.value); renderCanvas();});
+    container.querySelector("#arc-ry").addEventListener("input", e => {element.ry = parseFloat(e.target.value); renderCanvas();});
+    container.querySelector("#arc-start").addEventListener("input", e => {element.start = parseFloat(e.target.value); renderCanvas();});
+    container.querySelector("#arc-end").addEventListener("input", e => {element.end = parseFloat(e.target.value); renderCanvas();});
+  }
+
+  // Altre sezioni della palette potresti caricarle con la stessa logica
+  const container2 = document.getElementById("fill-subsection");
+  if(element.type !== "line"){
+    response = await fetch("palette-fill.html");
+    htmlText = await response.text();
+    container2.innerHTML = htmlText;
+
+    container2.querySelector("#fill").value = element.fillStyle.fill  || "#000000";
+    container2.querySelector("#fill").addEventListener("input", e => {element.fillStyle.fill = e.target.value;renderCanvas();});
+    container2.querySelector("#opacity").value = element.fillStyle.fillOpacity  || 1;
+    container2.querySelector("#opacity").addEventListener("input", e => {element.fillStyle.fillOpacity = parseFloat(e.target.value);renderCanvas();});
+  }else{
+    container2.innerHTML = "";
+  }
+}  
 
  
 
