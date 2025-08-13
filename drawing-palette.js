@@ -62,7 +62,9 @@ document.getElementById("center-origin-btn").addEventListener("click", () => {
 });
 
 
-// --- SCORCIATOIE DA TASTIERA ---
+// --- SCORCIATOIE DA TASTIERA --- eliminata per possibile conflietot con lo stato della app
+/*
+
 document.addEventListener("keydown", (e) => {
     // Ignora scorciatoie se il focus è su un input, textarea o select
   const tag = document.activeElement.tagName.toLowerCase();
@@ -75,7 +77,7 @@ document.addEventListener("keydown", (e) => {
     updateShapeParams(selectedShapeType);
   }
 });
-
+*/
 
 // --- AGGIUNGI FORMA ---
 

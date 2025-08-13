@@ -26,8 +26,11 @@ let gridSpacing = 10; // Passo della griglia in unità correnti
 let showAxes = true;
 
 // Stato per il pan
-let isPanning = false;
+// punto di inizio di default per il pan
 let startPan = { x: 0, y: 0 };
+let startMove = { x: 0, y: 0 };
+let startResize = { x: 0, y: 0 };
+let startRotate = { x: 0, y: 0 };
 
 // Array globale degli elementi disegnati
 let elements = [];
@@ -37,6 +40,21 @@ let selectedElementIndex = -1;
 
 // ID progressivo per ogni nuovo elemento
 let nextElementId = 1;
+
+// variabile globale appState 
+// === Stati della app ===
+const AppStates = {
+  DEFAULT: "default",
+  MOVE: "move",
+  ROTATE: "rotate",
+  RESIZE: "resize",
+  PAN: "pan"
+};
+// Stato attuale della app
+let currentState = AppStates.DEFAULT;
+// Per ricordare lo stato precedente
+let previousState = AppStates.DEFAULT; 
+
 
 // ======= FINE: Stato Globale dell'Applicazione =======
 

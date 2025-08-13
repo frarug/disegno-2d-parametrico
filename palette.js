@@ -138,13 +138,15 @@ function updateElements() {
       nameCell.textContent = el.name || `${el.type} ${el.id}`;
       row.appendChild(nameCell);
 
+      /*
       row.addEventListener("click", function() {
         selectedElementIndex = i; // imposti l'indice
         document.querySelectorAll("#element-list tbody tr")
                 .forEach(tr => tr.classList.remove("selected")); // rimuovi dai precedenti
         this.classList.add("selected"); // evidenzia questa riga
-        showElementProperties(elements[i].id); // mostra proprietà
+        showElementProperties2(elements[i].id); // mostra proprietà
       });
+      */
 
       // Icona visibilità
       const visCell = document.createElement("td");
@@ -154,7 +156,6 @@ function updateElements() {
         event.stopPropagation(); // blocca il click dal raggiungere la <tr>
         el.visible = !el.visible;
         updateElements(); // refresh tabella
-        //updateElementRow(el, visCell);
         renderCanvas();
         // eventuale refresh del disegno
         // drawElements(svgContainer);
@@ -163,19 +164,29 @@ function updateElements() {
 
       visCell.appendChild(icon);
       row.appendChild(visCell);
+
+      // --- SELEZIONE ---
+      if (el.selected) {
+        row.classList.add("selected");
+      }
+
+      row.addEventListener("click", (e) => {
+        if (e.shiftKey) {
+            // Toggle selezione multipla
+            el.selected = !el.selected;
+        } else {
+            // Selezione singola
+            elements.forEach(obj => obj.selected = false);
+            el.selected = true;
+        }
+        updateElements();
+        showElementProperties2(elements[i].id); // mostra proprietà
+        renderCanvas();
+      });
       tbody.appendChild(row);
     }
 }
 
-function updateElementRow(el, visCell){
-  el.visible = !el.visible;
-  const icon = el.visible ? createCheckIcon(16, 16) : createCrossIcon(16, 16);
-  icon.style.cursor = "pointer";
-  icon.addEventListener("click", updateElementRow(el, visCell));
-  visCell.textContent="";
-  visCell.appendChild(icon);
-  renderCanvas();
-}
 
 function selectElementById(id) {
     const selected = elements.find(el => el.id === id);
@@ -186,161 +197,6 @@ function selectElementById(id) {
 }
   
 // Mostra/modifica proprietà forma selezionata
-
-function showElementProperties(elementId) {
-    const element = elements.find(el => el.id === elementId);
-    if (!element) {
-        console.warn("Elemento non trovato:", elementId);
-        return;
-    }
-    const propertiesContainer = document.getElementById("properties-content");
-    propertiesContainer.innerHTML = "";  // puliamo la sezione proprietà
-  
-    // Creiamo le sezioni base con solo i titoli per ora
-    const sections = [
-        { id: "position-size", title: "Posizione e Dimensioni" },
-        { id: "fill", title: "Riempimento" },
-        { id: "stroke", title: "Linea" }
-    ];
-  
-    const elemsById = {};
-
-    for (const sec of sections) {
-        const sectionEl = document.createElement("div");
-        sectionEl.id = sec.id;
-        sectionEl.classList.add("property-section");
-    
-        const header = document.createElement("h4");
-        header.textContent = sec.title;
-        sectionEl.appendChild(header);
-    
-        propertiesContainer.appendChild(sectionEl);
-        elemsById[sec.id] = sectionEl;  // <-- salva il riferimento nel dizionario
-    }
-    // --- Posizione e Dimensioni ---
-    if (element.type === "rect") {
-        // x
-        const inputX = createNumberInput("X", element.x, val => {
-            element.x = val; 
-            renderCanvas();
-        });
-        elemsById["position-size"].appendChild(inputX);
-
-        // y
-        const inputY = createNumberInput("Y", element.y, val => {
-          element.y = val;
-          renderCanvas();
-        });
-        elemsById["position-size"].appendChild(inputY);
-
-        // width
-        const inputWidth = createNumberInput("Larghezza", element.width, val => {
-          element.width = val;
-          renderCanvas();
-        });
-        elemsById["position-size"].appendChild(inputWidth);
-
-        // height
-        const inputHeight = createNumberInput("Altezza", element.height, val => {
-          element.height = val;
-          renderCanvas();
-        });
-        elemsById["position-size"].appendChild(inputHeight);
-    }
-    // --- Riempimento ---
-    if (element.type !== "line") {
-        // Fill (colore)
-        const inputFill = createColorInput("Riempimento", element.fillStyle.fill || element.fill, val => {
-          if (typeof element.fillStyle === "object") {
-              element.fillStyle.fill = val;
-          } else {
-              element.fill = val;
-          }
-          renderCanvas();
-        });
-        elemsById["fill"].appendChild(inputFill);
-
-        // Fill (opacità)
-        const inputFillOpacity = createNumberInput("Opacità", 
-          (element.fillStyle.fillOpacity !== undefined ? element.fillStyle.fillOpacity : 1), 
-          val => {
-              val = Math.max(0, Math.min(1, val));
-              if (typeof element.fillStyle === "object") {
-                  element.fillStyle.fillOpacity = val;  // qui fillOpacity
-              } else {
-                  element.fillStyle = { fill: element.fillStyle, fillOpacity: val }; // qui anche
-              }
-              renderCanvas();
-          }
-        );
-        const inputElement = inputFillOpacity.querySelector("input");
-        inputElement.min = 0;
-        inputElement.max = 1;
-        inputElement.step = 0.05;
-        elemsById["fill"].appendChild(inputFillOpacity);
-    }
-
-    // Stroke (colore)
-    const inputStroke = createColorInput("Colore linea", element.strokeStyle.stroke || element.stroke, val => {
-      if (typeof element.strokeStyle === "object") {
-        element.strokeStyle.stroke = val;
-      } else {
-        element.stroke = val;
-      }
-      renderCanvas();
-    });
-    elemsById["stroke"].appendChild(inputStroke);
-
-    // Stroke Width (numero)
-    const inputStrokeWidth = createNumberInput("Spessore linea", element.strokeStyle.strokeWidth || element.strokeWidth, val => {
-        if (typeof element.strokeStyle === "object") {
-            element.strokeStyle.strokeWidth = val;
-        } else {
-            element.strokeWidth = val;
-        }
-        renderCanvas();
-    });
-    elemsById["stroke"].appendChild(inputStrokeWidth);
-
-    // Qui in futuro puoi aggiungere altri tipi di elemento...
-
-    // Funzioni helper per creare gli input
-    function createNumberInput(labelText, initialValue, onChange) {
-      const container = document.createElement("div");
-      container.classList.add("property-input");
-
-      const label = document.createElement("label");
-      label.textContent = labelText;
-      container.appendChild(label);
-
-      const input = document.createElement("input");
-      input.type = "number";
-      input.value = initialValue;
-     //input.step = "any";
-      input.addEventListener("input", e => onChange(parseFloat(e.target.value)));
-      container.appendChild(input);
-
-      return container;
-    }
-
-    function createColorInput(labelText, initialValue, onChange) {
-      const container = document.createElement("div");
-      container.classList.add("property-input");
-
-      const label = document.createElement("label");
-      label.textContent = labelText;
-      container.appendChild(label);
-
-      const input = document.createElement("input");
-      input.type = "color";
-      input.value = initialValue || "#000000";
-      input.addEventListener("input", e => onChange(e.target.value));
-      container.appendChild(input);
-
-      return container;
-    }
-}
-
 async function showElementProperties2(elementId) {
   const element = elements.find(el => el.id === elementId);
   if (!element) return;
