@@ -17,7 +17,10 @@
     <div class="svg-container">
       <svg id="canvas" xmlns="http://www.w3.org/2000/svg">
         <!-- Gruppo principale soggetto a pan e zoom -->
-        <!--g id="workspaceGroup"></g-->
+        <g id="grid-layer" pointer-events="none"></g>
+        <g id="elements-layer"></g>
+        <g id="axes-layer" pointer-events="none"></g>
+        <g id="overlay-layer"></g>
       </svg>
     </div>
 
@@ -26,8 +29,10 @@
   </div>
 
   <!-- Script principali -->
-  <script src="state.js"></script>     <!-- Gestione stato globale -->
-  <script src="graphics.js"></script> <!-- elementi grafici -->
+  <!--script src="debug-event-listeners.js"></script-->
+  <script src="globals.js"></script>     <!-- Gestione stato globale -->
+  <script src="graphics.js"></script> <!-- icone per la gui -->
+  <script src="shapes.js"></script> <!-- elementi grafici -->  
   <script src="drawing.js"></script>   <!-- Disegno della scena -->
   <script src="interactions.js"></script> <!-- Pan e zoom ecc. -->
   <script src="palette.js"></script>   <!-- Gestione palette -->
@@ -39,11 +44,14 @@
       //initPalette();       // Inizializza event listeners in palette.js
       initDrawingCanvas(); // Inizializza SVG e disegno
       //forme di prova
-      addShapeToCanvas("rect", {x:20, y:16, width:20, height:40, fillStyle:{fill:"#ffaa00", fillOpacity:0.6}});
-      addShapeToCanvas("circle", {cx:3, cy:6, r:40, fillStyle:{fill:"#ffffaa", fillOpacity:0.6}});
-      addShapeToCanvas("line", {x1:3, y1:6, x2:20, y2:40, strokeStyle:{stroke:"#ff0000", strokeWidth:4, strokeOpacity:0.4}});
-      addShapeToCanvas("line", {x1:30, y1:26, x2:50, y2:60, strokeStyle:{stroke:"#ffff00", strokeWidth:2, strokeOpacity:0.8}});
-      addShapeToCanvas("circle", {cx:32, cy:136, r:60, fillStyle:{fill:"#00ffaa", fillOpacity:0.7}});
+      addShapeToCanvas("rect", new Rect(20, 16, 20, 40, {fill:"#ffaa00", fillOpacity:0.6}));
+      addShapeToCanvas("circle", new Circle(3, 6, 40, {fill:"#ffffaa", fillOpacity:0.6}));
+      addShapeToCanvas("line", new Line(3, 6, 20, 40, {stroke:"#ff0000", strokeWidth:4, strokeOpacity:0.4}));
+      addShapeToCanvas("line", new Line(30, 26, 50, 60, {stroke:"#ffff00", strokeWidth:2, strokeOpacity:0.8}));
+      //addShapeToCanvas("circle", new Circle(32, 136, 60, {fill:"#00ffaa", fillOpacity:0.7}));
+      addShapeToCanvas("ellipse", new Ellipse(62, 186, 60, 45, {fill:"#d62e7f", fillOpacity:0.8}));
+      //addShapeToCanvas("arc", new Arc(162, 200, 160, 0, 30, 1, 1, {fill:"#d62e7f", fillOpacity:0.8}));
+      //addShapeToCanvas("ellipse-arc", EllipseArc.fromCenter(100, 200, 80, 40, 370, 765, 30, {fill:"#2867b8", fillOpacity:0.8}));
       //fine forme di prova
       renderCanvas();
     }
@@ -75,18 +83,12 @@
     <option value="rect">Rettangolo (R)</option>
     <option value="ellipse">Ellisse (E)</option>
   </select>
-
-
   <!-- Parametri forma dinamici da inserire dinamicamente-->
   <div id="shape-params"></div>
-  
-
   <!-- Pulsante per aggiungere la forma -->
-
   <button id="add-shape-btn" title="Aggiungi la forma al disegno">Aggiungi</button>
  
   <!-- Checkbox per disegnare dall'ultimo punto -->
-   
   <label>
     <input type="checkbox" id="draw-from-last-point" />
     Disegna dal punto precedente

@@ -1,5 +1,13 @@
-// state.js
+// globals.js
 // ======= INIZIO: Stato Globale dell'Applicazione =======
+const svg = document.getElementById("canvas");
+if (!svg) {
+  console.error("Canvas SVG non trovato");
+}
+const gridLayer      = document.getElementById("grid-layer");
+const elementsLayer  = document.getElementById("elements-layer");
+const axesLayer      = document.getElementById("axes-layer");
+const overlayLayer   = document.getElementById("overlay-layer");
 
 // Offset e zoom della canvas
 let canvasOffsetX = 4; // offset in millimetri
@@ -10,8 +18,9 @@ let canvasZoomFactor = 1.0;
 let canvasWidth = window.innerWidth;
 let canvasHeight = window.innerHeight;
 
-// Unità di misura e griglia
+// Unità di misura, precisione e griglia
 let currentUnit = "mm";         // "mm", "cm", "px"
+let canvasPrecision = 1; // default = 1 unità
 let pixelsPerUnit = 3.7795;     // 1 mm ≈ 3.7795 px (standard 96dpi)
 
 let dpiMonitor2 = 127; // pixel per pollice monitor macbook 14'' (254 nativa)
@@ -22,24 +31,46 @@ let pxPerMM = dpiMonitor / 25.4;
 
 // Visibilità elementi
 let showGrid = true;
-let gridSpacing = 10; // Passo della griglia in unità correnti
+let gridSpacing = 10; // Passo di default della griglia in unità correnti
 let showAxes = true;
+let showRulers = false;
 
-// Stato per il pan
-// punto di inizio di default per il pan
-let startPan = { x: 0, y: 0 };
-let startMove = { x: 0, y: 0 };
-let startResize = { x: 0, y: 0 };
-let startRotate = { x: 0, y: 0 };
+// Stato per il pan (spostamento della scena), 
+// il move (spostamento degli oggetti), 
+// lo scale (ridimensionamento degli oggeti) e 
+// il rotate (la rotazione degli oggetti)
+let startPan = { x: 0, y: 0 }; // punto di inizio di default per il pan
+let startMove = { x: 0, y: 0 }; // ""
+let startScale = { x: 0, y: 0 };  // ""
+let startRotate = { x: 0, y: 0 }; // ""
 
-// Array globale degli elementi disegnati
+let mouseDownTime = 0;
+let stickyMode = false;
+let lastX = 0, lastY = 0;
+
+let moving = false;
+let panning = false;
+let zooming = false;
+let scaling = false;
+let rotating = false;
+
+let currentHandle = null;
+
+// Array globale degli elementi creati
 let elements = [];
 
-// Indice dell'elemento selezionato
-let selectedElementIndex = -1;
+// Indice dell'ultimo elemento selezionato
+//let selectedElementIndex = -1;
+
+// array degli elementi selezionati, perché 
+// potrebbe esserci più di un elemento selezionato
+let selectedElements = [];
 
 // ID progressivo per ogni nuovo elemento
 let nextElementId = 1;
+
+// dimensione degli handlers in mm
+handlerRectSize = 2;
 
 // variabile globale appState 
 // === Stati della app ===
@@ -47,7 +78,7 @@ const AppStates = {
   DEFAULT: "default",
   MOVE: "move",
   ROTATE: "rotate",
-  RESIZE: "resize",
+  SCALE: "scale",
   PAN: "pan"
 };
 // Stato attuale della app
@@ -65,8 +96,10 @@ function generateElementId() {
 }
 
 // === Utility: conversione unità → pixel ===
+// non utilizzate per ora 
+/*
 function getGridStepInPixels() {
-  return gridStep * pixelsPerUnit * zoomFactor;
+  return gridStep * pixelsPerUnit * canvasZoomFactor;
 }
 
 function resetState() {
@@ -103,6 +136,7 @@ function updateElement(id, newProps) {
 function deleteElement(id) {
   elements = elements.filter(el => el.id !== id);
 }
+*/
 
 // === DEFAULT STYLE SETTINGS ===
 const defaultFillStyle = {

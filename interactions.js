@@ -1,184 +1,138 @@
 // ====================
-// INTERACTIONS: Pan e Zoom
-// ====================
-/*
-//isPanning e startPan {x, y} sono variabili globali che sono definite in state.js;
-
-// Eventi mouse sulla canvas
-const canvas = document.getElementById("canvas");
-if(canvas === null) console.warn(canvas);
-canvas.addEventListener("mousedown", (e) => {
-  if (e.shiftKey) { // Pan solo con Shift
-    isPanning = true;
-    canvas.style.cursor = "grabbing"; // cambia il cursore quando premi
-    startPan.x = e.clientX;
-    startPan.y = e.clientY;
-    //console.warn(e);
-  }
-});
-
-canvas.addEventListener("mousemove", (e) => {
-  if (!isPanning) return;
-  const dx = (e.clientX - startPan.x) ;
-  const dy = (e.clientY - startPan.y) ;
-  canvasOffsetX += dx;
-  canvasOffsetY -= dy;
-  //console.log("canvasOffsetX:"+canvasOffsetX+" canvasOffsetY:"+canvasOffsetY);
-  startPan.x = e.clientX;
-  startPan.y = e.clientY;
-  renderCanvas();
-});
-
-canvas.addEventListener("mouseup", () => {
-  isPanning = false;
-});
-
-canvas.addEventListener("mouseleave", () => {
-  isPanning = false;
-});
-
-// Zoom con rotella del mouse
-
-canvas.addEventListener("wheel", (e) => {
-  e.preventDefault();
-  const zoomFactor = 1.01;
-  const direction = e.deltaY > 0 ? 1 / zoomFactor : zoomFactor;
-
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-  const worldX = (mx - canvasOffsetX) / (canvasZoomFactor * pxPerMM);
-  const worldY = ((canvasHeight - my) - canvasOffsetY) / (canvasZoomFactor * pxPerMM); 
-
-  canvasZoomFactor *= direction;
-  canvasOffsetX = mx - (worldX * canvasZoomFactor * pxPerMM);
-  canvasOffsetY = canvasHeight - my - (worldY * canvasZoomFactor * pxPerMM);
-  renderCanvas();
-  updateZoomDisplay();
-}, { passive: false });
-
-// ====================
-// FINE INTERACTIONS
-// ====================
-
-*/
-
-// ====================
 // INTERACTIONS: Pan e Zoom ecc
 // ====================
+if (svg === null) console.warn("Canvas non trovato:", svg);
 
-// listener per gli stati della app
+// listener per gli stati della app comandati da tastiera
 document.addEventListener("keydown", (e) => {
+  console.log("---------------------:");
   if (e.altKey) {
     if (currentState !== AppStates.PAN) {
       previousState = currentState;
       currentState = AppStates.PAN;
-      canvas.style.cursor = "grab"; // cursore pan
+      svg.style.cursor = "grab"; // cursore pan
     }
   } else if (e.key === "m") {
     currentState = AppStates.MOVE;
-    canvas.style.cursor = "move";
+    svg.style.cursor = "move";
   } else if (e.key === "r") {
     currentState = AppStates.ROTATE;
-    canvas.style.cursor = "crosshair";
-  } else if (e.key === " ") {
+    svg.style.cursor = "crosshair";
+  }else if (e.key === "s") {
+    currentState = AppStates.SCALE;
+    svg.style.cursor = "pointer";
+  } else if (e.key === " " || e.key === "Escape") {
     currentState = AppStates.DEFAULT;
-    canvas.style.cursor = "default";
+    svg.style.cursor = "default";
+    stickyMode = false;
   }
+  console.log("keydown! currentState:",currentState);
 });
 
+// listener per tornare allo stato precedente qundo si 
+// rilascia il tasto alt (option -> PAN)
 document.addEventListener("keyup", (e) => {
   if (e.altKey === false && currentState === AppStates.PAN) {
-    console.log(previousState);
+    console.log("keyup!, previousState:", previousState);
     currentState = previousState;
-    canvas.style.cursor = "default";
-    if (currentState === AppStates.MOVE) canvas.style.cursor = "move";
-    else if (currentState === AppStates.ROTATE) canvas.style.cursor = "crosshair";
-    else if (currentState === AppStates.DEFAULT) canvas.style.cursor = "default";
+    svg.style.cursor = "default";
+    if (currentState === AppStates.MOVE) svg.style.cursor = "move";
+    else if (currentState === AppStates.ROTATE) svg.style.cursor = "crosshair";
+    else if (currentState === AppStates.SCALE) svg.style.cursor = "pointer";
+    else if (currentState === AppStates.DEFAULT) svg.style.cursor = "default";
   }
 });
 
 
-const canvas = document.getElementById("canvas");
-if (canvas === null) console.warn("Canvas non trovato:", canvas);
 
-// Pan con Shift
-//  currentState, previousState e startPan {x, y} sono variabili globali definite in state.js
-canvas.addEventListener("mousedown", (e) => {
+//  currentState, previousState e startPan {x, y} sono variabili globali definite in globals.js
+// aggiungo il listener per il mousedown alla canvas
+svg.addEventListener("mousedown", mousedownHandler);
+
+function mousedownHandler(e) {
+  console.log("mousedownHandler! AppStatus: ", currentState, ", stickyMode:", stickyMode);
+  //prendo il momento del mousedown e la posizione del mouse
+  mouseDownTime = Date.now();
+  lastX = e.clientX;
+  lastY = e.clientY;
+
+  // gestisce il Pan della canvas
   if (currentState === AppStates.PAN) {
-    canvas.style.cursor = "grabbing";
+    console.log("mousedown! currentState: ", AppStates.PAN, ", stickyMode:", stickyMode);
+    //svg.style.cursor = "grabbing";
     startPan.x = e.clientX;
     startPan.y = e.clientY;
-
     // Attacco mousemove e mouseup a livello globale per continuare 
     // il pan anche col mouse al di fuori della finestra
-    document.addEventListener("mousemove", handlePanMove);
-    document.addEventListener("mouseup", handlePanEnd);
+    document.addEventListener("mousemove", panDrag);
+    document.addEventListener("mouseup", panEnd);
   }
+  // gestisce lo spostamento di oggetti sulla canvas
   else if (currentState === AppStates.MOVE) {
-    if (selectedElements().length === 0) return; // nessun oggetto selezionato
-
+    console.log("mousedown! currentState: ", AppStates.MOVE, ", stickyMode:", stickyMode);
+    if (selectedElements.length === 0) return; // nessun oggetto selezionato
+    //svg.style.cursor = "move";
+    // Salva stato iniziale in base al tipo
+    //const orig = { ...element };
     startMove.x = e.clientX;
     startMove.y = e.clientY;
-
-    document.addEventListener("mousemove", handleMoveDrag);
-    document.addEventListener("mouseup", handleMoveEnd);
-
-    canvas.style.cursor = "move";
+    document.addEventListener("mousemove", moveDrag);
+    document.addEventListener("mouseup", moveEnd);
   }
+  // gestisco lo SCALE
+  else if(currentState === AppStates.SCALE) {  
+    console.log("mousedown! currentState: ", AppStates.SCALE, ", stickyMode:", stickyMode);  
+    if (selectedElements.length === 0) return; // nessun oggetto selezionato    
+    //canvas.style.cursor = "grabbing";
+    // Salva stato iniziale dell'elemento
+    /*
+    element = selectedElements[selectedElements.length-1];
+    let orig = { ...element };
+    startScale.x = e.clientX;
+    startScale.y = e.clientY;
+    document.addEventListener("mousemove", (e) => scaleDrag(e, orig));
+    document.addEventListener("mouseup", scaleEnd);
+    */
+    scaleStart(e);
+  }
+  // gestisce la selezione di oggetti sulla canvas
   else if (currentState === AppStates.DEFAULT) {
+    console.log("mousedown! currentState: ", AppStates.DEFAULT, ", stickyMode:", stickyMode);
     const clickedElement = getElementAtPosition(e.clientX, e.clientY);
-    if (clickedElement) {
-        if (e.shiftKey) {
-            // Toggle selezione
-            clickedElement.selected = !clickedElement.selected;
-        } else {
-            // Selezione singola
-            elements.forEach(el => el.selected = false);
-            clickedElement.selected = true;
-        }
-    } else {
-        // click su vuoto: cancella selezione SOLO se non c'è Shift
-        if (!e.shiftKey) {
-          elements.forEach(o => o.selected = false);
-        }
-    }
-    renderCanvas();
-}
-});
-
-
-function handleMoveDrag(e) {
-  const dxScreen = e.clientX - startMove.x;
-  const dyScreen = e.clientY - startMove.y;
-
-  // Conversione da pixel a unità mondo
-  const dxWorld = dxScreen / (canvasZoomFactor * pxPerMM);
-  const dyWorld = -dyScreen / (canvasZoomFactor * pxPerMM); // attenzione segno Y
-
-  // Muovo tutti gli elementi selezionati
-  for (let el of selectedElements()) {
-      moveElement(el, dxWorld, dyWorld);
+    selectElement(e, clickedElement);
+    //if(clickedElement) clickedElement.handler.adjustPosition();
   }
+};
 
-  startMove.x = e.clientX;
-  startMove.y = e.clientY;
+function doNothing(e) {
 
+}
+
+
+// seleziona un oggetto della canvas
+function selectElement(e, el){
+  if(el){
+    if (e.shiftKey) {  // Toggle selezione multipla
+      el.selected = !el.selected;
+      if (el.selected) selectedElements.push(el);
+      else selectedElements.splice(selectedElements.findIndex(obj  => obj.id === el.id), 1);
+    } else {   // Selezione singola       
+        elements.forEach(obj => obj.selected = false);
+        el.selected = true;
+        selectedElements.length = 0;
+        selectedElements.push(el);
+    }
+  }else{ // selezione nulla
+    elements.forEach(obj => obj.selected = false);
+    selectedElements.length = 0;
+  }
+  console.log(selectedElements.length);
+  loadElementPropertyControls(); // carica il file delle proprietà dell'elemento el
+  updatePaletteElmentListSelection(); // colora le righe degli oggetti selezionati 
   renderCanvas();
 }
 
-function handleMoveEnd() {
-  document.removeEventListener("mousemove", handleMoveDrag);
-  document.removeEventListener("mouseup", handleMoveEnd);
-  //canvas.style.cursor = "default";
-}
-
-// Helper: restituisce array degli elementi selezionati
-function selectedElements() {
-  return elements.filter(el => el.selected);
-}
-
-function handlePanMove(e) {
+function panDrag(e) {
   if (currentState !== AppStates.PAN) return;
   const dx = e.clientX - startPan.x;
   const dy = e.clientY - startPan.y;
@@ -188,15 +142,181 @@ function handlePanMove(e) {
   startPan.y = e.clientY;
   renderCanvas();
 }
-
-function handlePanEnd() {
+function panEnd() {
   if (currentState === AppStates.PAN) {
-    canvas.style.cursor = "grab"; // mantengo il grab quando rilascio, finché lo Shift è premuto
-    document.removeEventListener("mousemove", handlePanMove);
-    document.removeEventListener("mouseup", handlePanEnd);
+    svg.style.cursor = "grab"; // mantengo il grab quando rilascio, finché lo Shift è premuto
+    document.removeEventListener("mousemove", panDrag);
+    document.removeEventListener("mouseup", panEnd);
   }
 }
 
+function moveDrag(e) {
+  if (currentState !== AppStates.MOVE) return;
+  console.log(" moveDrag...  currentState:", AppStates.MOVE, ", stickyMode:", stickyMode);
+  const dxScreen = e.clientX - startMove.x;
+  const dyScreen = e.clientY - startMove.y;
+  // Conversione da pixel a unità mondo
+  const dx = dxScreen / (canvasZoomFactor * pxPerMM);
+  const dy = -dyScreen / (canvasZoomFactor * pxPerMM); // attenzione segno Y
+  // Muovo tutti gli elementi selezionati
+  for (let el of selectedElements) {
+      el.moveBy(dx, dy);
+  }
+  startMove.x = e.clientX;
+  startMove.y = e.clientY;
+  renderCanvas();
+  // aggiorno le info di posizione e 
+  // dimensione nella palette di controllo
+  updateElementPropertyControls(selectedElements[selectedElements.length-1]);
+}
+function moveEnd() {
+  //console.log("dentro handleMoveEnd.. (interaction.js)");
+  if((mouseDownTime +300) < Date.now() || stickyMode){
+    document.removeEventListener("mousemove", moveDrag);
+    document.removeEventListener("mouseup", moveEnd);
+    for (let el of selectedElements) {
+      el.applyPrecision();
+    }
+    stickyMode = false;
+  }else{
+    stickyMode = true;
+  }
+  console.log("stickyMode:", stickyMode);
+}
+
+// variabili per la scala
+let currentScaleOrig = null;
+
+// ---- scaleStart ----
+function scaleStart(e) {
+  console.log("passo per scaleStart");
+  let handleType = e.target && e.target.dataset && e.target.dataset.type;
+  // gestione click su un handle
+  if(!handleType) return;
+  currentHandle = e.target;
+  startScale.x = e.clientX;
+  startScale.y = e.clientY;
+
+  // copia gli stati iniziali degli elementi selezionati
+  currentScaleOrig = selectedElements.map(el => ({ el, orig: { ...el } }));
+  document.addEventListener("mousemove", scaleDragWrapper);
+  document.addEventListener("mouseup", scaleEnd);
+}
+
+// ---- scaleDrag ----
+function scaleDragWrapper000(e) {
+  if (!currentScaleOrig) return;
+  const dx = (e.clientX - startScale.x) / (canvasZoomFactor * pxPerMM);
+  const dy = (e.clientY - startScale.y) / (canvasZoomFactor * pxPerMM);
+  for (let { el, orig } of currentScaleOrig) {
+    resizeElement(el, dx, dy, activeHandleType, orig);
+  }
+  renderCanvas();
+}
+
+// ---- scaleEnd ----
+function scaleEnd000(e) {
+  if (mouseDownTime + 300 > Date.now()) {
+    // fine "rapida": applica precisione
+    for (let { el } of currentScaleOrig) {
+      el.applyPrecision();
+    }
+    currentScaleOrig = null;
+
+    document.removeEventListener("mousemove", scaleDragWrapper);
+    document.removeEventListener("mouseup", scaleEnd);
+  }
+}
+
+function scaleDragWrapper(e) {
+  if (currentState !== AppStates.SCALE) return;
+  if (!currentScaleOrig) return;
+  //console.log(" scaleDrag...  currentState:", AppStates.MOVE, ", stickyMode:", stickyMode);
+  //let handleType = e.target && e.target.dataset && e.target.dataset.type;
+  // gestione click su un handle
+  //if(!handleType) return;
+
+
+  handleType = currentHandle.dataset.type;
+  console.log("drag su un handle:", handleType);
+  const dx = (e.clientX - startScale.x) / (canvasZoomFactor * pxPerMM);
+  const dy = -(e.clientY - startScale.y) / (canvasZoomFactor * pxPerMM);
+
+  //for (let el of selectedElements) {
+  for (let { el, orig } of currentScaleOrig) {
+    //resizeElement(element, dx, dy, handleType);
+    console.log("--> scale: element.type:", el.type);
+    switch (el.type) {
+      case "line": resizeLine(el, orig, dx, dy, handleType); break;
+      case "rect": resizeRect(el, orig, dx, dy, handleType); break;
+      case "circle": resizeCircle(el, orig, dx, dy, handleType); break;
+      case "ellipse": resizeEllipse(el, orig, dx, dy, handleType); break;
+      // Qui in futuro possiamo aggiungere poligoni, archi ecc.
+    }
+    
+  }    
+  renderCanvas();
+  // aggiorno le info di posizione e 
+  // dimensione nella palette di controllo
+  updateElementPropertyControls(selectedElements[selectedElements.length-1]);
+}
+
+function scaleEnd() {
+  if((mouseDownTime +300) < Date.now() || stickyMode){
+    document.removeEventListener("mousemove", scaleDragWrapper);
+    document.removeEventListener("mouseup", scaleEnd);
+    for (let el of selectedElements) {
+      el.applyPrecision();
+    }
+    stickyMode = false;
+    currentScaleOrig = null;
+    currentHandle = null;
+    console.log("listener rimossi!!!!!!!!  stickyMode:", stickyMode);
+  }else {
+    stickyMode = true;
+  }
+}
+
+// Helper: restituisce array degli elementi selezionati
+/*
+function getSelectedElements() {
+  //return elements.filter(el => el.selected);
+  return selectedElements;
+}
+
+
+// funzioni chiamate dai listener degli handler
+
+function onHandleMouseDown(e, handleType, element) {
+  console.log("dentro onHandleMouseDown.. (interaction.js)");
+  if (currentState === AppStates.MOVE) {
+      //startMoveElement(e, element);
+      startMove.x = e.clientX;
+      startMove.y = e.clientY;
+      handleMoveDrag(e);
+  } else if (currentState === AppStates.SCALE) {
+      //startMove.x = e.clientX;
+      //startMove.y = e.clientY;
+      startResizeElement(e, element, handleType);
+  } else if (currentState === AppStates.ROTATE) {
+      startRotateElement(e, element);
+  }
+}
+  
+function onHandleMouseMove(e, handleType, element) {
+  console.log("dentro onHandleMouseMove.. (interaction.js)");
+  if (currentState === AppStates.MOVE) {
+      //endMoveElement(e, element);
+      startMove.x = e.clientX;
+      startMove.y = e.clientY;
+      handleMoveDrag(e);
+  } else if (currentState === AppStates.SCALE) {
+      //handleResizeElement(e, element, handleType);
+  } else if (currentState === AppStates.ROTATE) {
+      //handleRotateElement(e, element);
+  }
+}
+*/
 function getElementAtPosition(screenX, screenY) {
   // Ottieni il bounding rect della canvas
   const rect = canvas.getBoundingClientRect();
@@ -209,9 +329,9 @@ function getElementAtPosition(screenX, screenY) {
   const worldX = (mx - canvasOffsetX) / (canvasZoomFactor * pxPerMM);
   const worldY = ((canvasHeight - my) - canvasOffsetY) / (canvasZoomFactor * pxPerMM);
 
-  // Scorri gli elementi dal più “sopra” al più “sotto”
+  // Scorri gli elementi dal più “sopra” al più “sotto” tra quelli visibili
   for (let i = elements.length - 1; i >= 0; i--) {
-      if (elements[i].containsPoint(worldX, worldY)) {
+      if (elements[i].visible && elements[i].containsPoint(worldX, worldY)) {
           return elements[i];
       }
   }
@@ -220,12 +340,13 @@ function getElementAtPosition(screenX, screenY) {
 
 
 // Zoom con rotella
-canvas.addEventListener("wheel", (e) => {
+svg.addEventListener("wheel", (e) => {
   e.preventDefault();
-  const zoomFactor = 1.01;
+  let zoomFactor  = 1.01;
+  if(e.shiftKey) zoomFactor = 1.1;
   const direction = e.deltaY > 0 ? 1 / zoomFactor : zoomFactor;
 
-  const rect = canvas.getBoundingClientRect();
+  const rect = svg.getBoundingClientRect();
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
   const worldX = (mx - canvasOffsetX) / (canvasZoomFactor * pxPerMM);
@@ -236,6 +357,9 @@ canvas.addEventListener("wheel", (e) => {
   canvasOffsetY = canvasHeight - my - (worldY * canvasZoomFactor * pxPerMM);
   renderCanvas();
   updateZoomDisplay();
+  for(let e of selectedElements){
+    e.handler.adjustCanvasZoom();
+  }
 }, { passive: false });
 
 // ====================

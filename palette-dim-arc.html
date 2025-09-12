@@ -1,28 +1,22 @@
-<!-- palette-dim-arc.html -->
+<!-- BEGIN palette-dim-arc.html -->
 <div class="palette-section" id="pos-dim-arc">
-    <h3>Posizione e dimensioni</h3>
-    <div class="input-group">
-        <label for="arc-cx">Cx:</label>
-        <input type="number" id="arc-cx" name="arc-cx" step="0.5" />
-    </div>
-    <div class="input-group">
-        <label for="arc-cy">Cy:</label>
-        <input type="number" id="arc-cy" name="arc-cy" step="0.5" />
-    </div>
-    <div class="input-group">
-        <label for="arc-rx">rx:</label>
-        <input type="number" id="arc-rx" name="arc-rx"  min="0" step="0.5" />
-    </div>
-    <div class="input-group">
-        <label for="arc-ry">ry:</label>
-        <input type="number" id="arc-ry" name="arc-ry"  min="0" step="0.5" />
-    </div>
-    <div class="input-group">
-        <label for="arc-start">angle start:</label>
-        <input type="number" id="arc-start" name="arc-start" step="0.1" />
-    </div>
-    <div class="input-group">
-        <label for="arc-end">angle end:</label>
-        <input type="number" id="arc-end" name="arc-end" step="0.1" />
-    </div>
-  </div>
+<table>
+    <tr><td>Centro (x) </td><td>Centro (y)</td></tr>
+    <tr><td><input type="number" id="arc-cx" name="arc-cx" step="0.5"  class="short-number-12"/></td>
+    <td><input type="number" id="arc-cy" name="arc-cy" step="0.5"  class="short-number-12"/></td></tr> 
+    <tr><td>Semiasse lungo x </td><td>Semiasse lungo y</td></tr>
+    <tr><td><input type="number" id="arc-rx" name="arc-rx" step="0.5"  class="short-number-12"/></td>
+    <td><input type="number" id="arc-ry" name="arc-ry" step="0.5"  class="short-number-12"/></td></tr>
+    <tr><td>Angolo iniziale (°)</td><td>Angolo finale (°)</td></tr>
+    <tr><td><input type="number" id="arc-start" name="arc-start" step="0.1" class="short-number-8"/></td>
+    <td><input type="number" id="arc-end" name="arc-end" step="0.1" class="short-number-8"/></td></tr>
+    <tr><td class="input-group"><label for="largeArcFlagSelect">Arco:</label></td><td>Rotazione</td></tr>
+    <tr><td><select id="largeArcFlagSelect" name="largeArcFlagSelect">
+            <option value="1">maggiore</option>
+            <option value="0">minore</option>
+        </select></td>
+        <td><input type="number" id="arc-rot" name="arc-rot" step="0.1" class="short-number-8"/></td>
+    </tr>
+</table>
+</div>
+<!-- END palette-dim-arc.html -->

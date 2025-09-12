@@ -11,9 +11,21 @@
           <option value="cm">cm</option>
           <option value="px">px</option>
         </select>
-      </label><br>
+      </label>
+      <label>
+        Precisione:
+        <select id="precisionSelect">
+          <option value="1">1</option>
+          <option value="0.1" selected>1/10</option>
+          <option value="0.01">1/100</option>
+          <option value="0.001">1/1000</option>
+        </select>
+      </label>
+      <br>
       <label><input type="checkbox" id="showGrid"> Mostra griglia</label> con 
       <label>passo: <input type="number" id="gridSize" min="0" step="1" class="short-number-6"> </label><br>
+      <label><input type="checkbox" id="snapToGridCheckbox"> Allinea alla griglia </label> 
+      [<label>Tolleranza (px): <input type="number" id="snapToleranceInput" value="8" min="1" class="short-number-4"></label> ]<br>
       <label><input type="checkbox" id="showAxes" checked> Mostra assi cartesiani </label>
       </div>
     </section>

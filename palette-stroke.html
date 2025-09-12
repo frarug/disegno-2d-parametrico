@@ -1,0 +1,44 @@
+<!-- BEGIN palette-stroke.html -->
+<div class="palette-section" id="stroke-property">
+  <h3>Linea</h3>
+  <!--stroke: '#000000', -->
+  <div class="input-group">
+    <label for="strokeColor">Colore:</label>
+    <input type="color" id="strokeColor" name="strokeColor" />
+  </div>
+
+  <!--strokeOpacity: 1.0,-->
+  <div class="input-group">
+    <label for="strokeOpacity">Opacità:</label>
+    <input type="number" id="strokeOpacity" name="strokeOpacity" min="0" max="1" step="0.1" />
+  </div>
+
+  <!--strokeWidth: 1,-->
+  <div class="input-group">
+    <label for="strokeWidth2">Spessore:</label>
+    <input type="number" id="strokeWidth2" name="strokeWidth2" min="0" step="0.1" />
+  </div>
+
+  <!--strokeDasharray: 'none',  // es: '5,5' per tratteggiato-->
+  <div class="input-group">
+    <label for="strokeDasharray">Tratteggio:</label>
+    <input type="text" id="strokeDasharray" name="strokeDasharray" />
+  </div>
+
+  <!--strokeLinecap: 'butt',    // butt, round, square-->
+  <label for="strokeLinecap">terminale:</label>
+  <select id="strokeLinecap" name="strokeLinecap">
+    <option value="butt">butt</option>
+    <option value="round">round</option>
+    <option value="square">square</option>
+  </select>
+
+  <!--strokeLinejoin: 'miter'   // miter, round, bevel -->
+  <label for="strokeLinejoin">Giunzione:</label>
+  <select id="strokeLinejoin" name="strokeLinejoin">
+    <option value="miter">miter</option>
+    <option value="round">round</option>
+    <option value="bevel">bevel</option>
+  </select>
+</div>
+<!-- END palette-stroke.html -->

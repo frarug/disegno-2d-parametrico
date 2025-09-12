@@ -64,6 +64,11 @@ body {
     user-select: none; /* inibisce la selezione del testo */
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
+
+    -user-select: none; /* standard */
+    -webkit-user-select: none; /* Safari*/
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Explorer */
   }
   
   .paletteH-header {
@@ -103,11 +108,22 @@ body {
     cursor: pointer;
     border-top: 1px solid #ccc;
     font-size: 0.8em;
+
+    -user-select: none; /* standard */
+    -webkit-user-select: none; /* Safari*/
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Explorer */
   }
   
   .palette-section .section-content {
     padding: 0.5em;
-    font-size: 0.8em;
+    padding-top: 0.2em;
+    font-size: 0.9em;
+
+    -user-select: none; /* standard */
+    -webkit-user-select: none; /* Safari*/
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* Explorer */
   }
   
   .palette-section.collapsed .section-content {
@@ -250,6 +266,8 @@ body {
   .short-number-4 { width: 4ch; }
   .short-number-6 { width: 6ch; }
   .short-number-8 { width: 8ch; }
+  .short-number-10 { width: 10ch; }
+  .short-number-12 { width: 12ch; }
   input[type="number"].short { width: 5ch; }
   
   button {
