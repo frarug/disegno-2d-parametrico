@@ -104,7 +104,7 @@ class Line extends Shape {
     if(point == "start") {
       this.x1 = x;
       this.y1 = y;
-    } else {
+    } else if(point == "end"){
       this.x2 = x;
       this.y2 = y;
     }
@@ -537,9 +537,7 @@ class Ellipse extends Shape {
 
     layer.appendChild(centerPoint); 
   }
-  drawFocusLoci(layer) {
-    const size = handlerRectSize/canvasZoomFactor;
-
+  getFocusLoci(){
     //trovo la distanza dei fuochi dal centro
     let dist = Math.sqrt(Math.abs(Math.pow(this.rx,2) - Math.pow(this.ry, 2)));
     // setto le distanze dal centro. 
@@ -549,13 +547,19 @@ class Ellipse extends Shape {
     else dy = dist;
 
     const points = [
-      { type: "focus1", px: this.cx+dx, py: this.cy+dy },
-      { type: "focus2", px: this.cx-dx, py: this.cy-dy  }
+      { type: "focus1", x: this.cx+dx, y: this.cy+dy },
+      { type: "focus2", x: this.cx-dx, y: this.cy-dy  }
     ];
-    for (let p of points) {
+    return points;
+  }
+  drawFocusLoci(layer) {
+    const size = handlerRectSize/canvasZoomFactor;
+
+    let fLoci = this.getFocusLoci();
+    for (let p of fLoci) {
       let handle = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      handle.setAttribute("x", p.px - size / 2);
-      handle.setAttribute("y", p.py - size / 2);
+      handle.setAttribute("x", p.x - size / 2);
+      handle.setAttribute("y", p.y - size / 2);
       handle.setAttribute("width", size);
       handle.setAttribute("height", size);
       handle.setAttribute("fill", "#00ffff");
@@ -1187,7 +1191,7 @@ class Handler {
         onHandleMouseDown(e, p.type, this.element);
       });
       */
-      handle.addEventListener("mousedown", doNothing);
+      handle.addEventListener("pointerdown", doNothing);
 
     
       //svg.appendChild(handle);
@@ -1325,294 +1329,6 @@ class Handler {
 // === FINE definizione classe Handler ===
 
 // === INIZIO definizioni nuovi handlers
-class BaseHandlers1 {
-  constructor(element, layer) {
-    this.element = element;  // forma associata (Rect, Ellipse, ecc.)
-    this.layer = layer;
-    this.handles = {};
-    this.bBox = null;
-    this.helperLines = [];
-    this.visible = false;
-  }
-
-  createBBox(x, y, width, height){
-    if(this.element.type !== "line") {
-      const box = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-      box.setAttribute("x", x);
-      box.setAttribute("y", y);
-      box.setAttribute("width", width);
-      box.setAttribute("height", height);
-      box.setAttribute("fill", "none");
-      box.setAttribute("stroke", "#00ffff");
-      box.setAttribute("stroke-width", "1");
-      box.setAttribute("stroke-dasharray", "4,2");
-      box.setAttribute("vector-effect", "non-scaling-stroke");
-      return box;
-    }
-  }
-
-  // crea un quadratino handler generico
-  createHandle(x, y, size, type, cursor="default", color="#00ffff") {
-    const h = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    h.setAttribute("x", x - size/2);
-    h.setAttribute("y", y - size/2);
-    h.setAttribute("width", size);
-    h.setAttribute("height", size);
-    h.setAttribute("fill", color);
-    h.setAttribute("stroke", "#000");
-    h.setAttribute("stroke-width", "1");
-    h.setAttribute("vector-effect", "non-scaling-stroke");
-    h.style.cursor = cursor;
-    h.dataset.type = type;
-    return h;
-  }
-
-  createHelperLine(x1, y1, x2, y2, color="#00ffff") {
-    let hl = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    hl.setAttribute("x1", x1);
-    hl.setAttribute("y1", y1);
-    hl.setAttribute("x2", x2);
-    hl.setAttribute("y2", y2);
-    hl.setAttribute("stroke", color);
-    hl.setAttribute("stroke-width", "1");
-    hl.setAttribute("stroke-dasharray", "4,2");
-    hl.setAttribute("vector-effect", "non-scaling-stroke");
-    return hl;
-  }
-
-  setPos(handle, x, y, size) {
-    handle.setAttribute("x", x - size/2);
-    handle.setAttribute("y", y - size/2);
-    handle.setAttribute("width", size);
-    handle.setAttribute("height", size);
-  }
-
-  adjustPosition() {
-    // riposiziono il bBox nel caso l'elemento sia stato spostato e/o scalato
-    let box = this.element.getBoundingBox();
-    if(this.element.type != "line"){
-      this.bBox.setAttribute("x", box.x);
-      this.bBox.setAttribute("y", box.y);
-      this.bBox.setAttribute("width", box.width);
-      this.bBox.setAttribute("height", box.height);
-    }
-  }
-
-  show() {
-    this.visible = true;
-    if (!this.bBox.parentNode) this.layer.appendChild(this.bBox);
-    Object.values(this.handles).forEach(h => {
-      if (!h.parentNode) this.layer.appendChild(h);
-    });
-
-  }
-
-  hide() {
-    this.visible = false;
-    if (this.bBox && this.bBox.parentNode) this.layer.removeChild(this.bBox);
-    Object.values(this.handles).forEach(h => {
-      if (h.parentNode) this.layer.removeChild(h);
-    });
-  }
-
-  destroy() {
-    this.hide();
-    this.handles = {};
-    this.bBox = null;
-  }
-
-  // metodo astratto: ogni sottoclasse deve ridefinirlo
-  update() {
-    throw new Error("update() deve essere implementato nella sottoclasse");
-  }
-}
-
-
-class BaseHandlers2 {
-  constructor(element, overlayLayer) {
-    this.element = element;           // Oggetto geometrico associato
-    this.overlayLayer = overlayLayer; // Layer SVG dove appendere bbox, handle, helplines
-    this.bBox = null;                 // <rect> bounding box
-    this.handles = [];                // array di <rect> per gli handle
-    this.helperLines = [];            // array di <line> per le linee di aiuto
-  }
-
-  // Crea il bbox tratteggiato
-  createBBox(x, y, width, height) {
-    if (this.bBox) this.overlayLayer.removeChild(this.bBox);
-
-    let rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    rect.setAttribute("x", x);
-    rect.setAttribute("y", y);
-    rect.setAttribute("width", width);
-    rect.setAttribute("height", height);
-    rect.setAttribute("fill", "none");
-    rect.setAttribute("stroke", "#00ffff");
-    rect.setAttribute("stroke-width", "1");
-    rect.setAttribute("stroke-dasharray", "4,2");
-    rect.setAttribute("vector-effect", "non-scaling-stroke");
-
-    this.overlayLayer.appendChild(rect);
-    this.bBox = rect;
-  }
-
-  // 🔹 Crea una singola maniglia
-  createHandle(x, y, size, type, cursor = "default", color = "#00ffff") {
-    let handle = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    handle.setAttribute("x", x - size / 2);
-    handle.setAttribute("y", y - size / 2);
-    handle.setAttribute("width", size);
-    handle.setAttribute("height", size);
-    handle.setAttribute("fill", color);
-    handle.setAttribute("stroke", "#000");
-    handle.setAttribute("stroke-width", "1");
-    handle.setAttribute("vector-effect", "non-scaling-stroke");
-    handle.dataset.type = type;
-    handle.style.cursor = cursor;
-
-    this.overlayLayer.appendChild(handle);
-    this.handles.push(handle);
-
-    return handle;
-  }
-
-  // Aggiunge una linea di aiuto
-  addHelperLine(x1, y1, x2, y2, color = "#ff00ff") {
-    let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", x1);
-    line.setAttribute("y1", y1);
-    line.setAttribute("x2", x2);
-    line.setAttribute("y2", y2);
-    line.setAttribute("stroke", color);
-    line.setAttribute("stroke-width", "1");
-    line.setAttribute("stroke-dasharray", "2,2");
-    line.setAttribute("vector-effect", "non-scaling-stroke");
-
-    this.overlayLayer.appendChild(line);
-    this.helperLines.push(line);
-    return line;
-  }
-
-  // Ripulisce tutte le help line
-  clearHelperLines() {
-    for (let l of this.helperLines) {
-      this.overlayLayer.removeChild(l);
-    }
-    this.helperLines = [];
-  }
-
-  // Mostra tutto (bbox + handles + helplines)
-  show() {
-    if (this.bBox) this.bBox.style.display = "block";
-    this.handles.forEach(h => h.style.display = "block");
-    this.helperLines.forEach(l => l.style.display = "block");
-  }
-
-  // Nasconde tutto
-  hide() {
-    if (this.bBox) this.bBox.style.display = "none";
-    this.handles.forEach(h => h.style.display = "none");
-    this.helperLines.forEach(l => l.style.display = "none");
-  }
-
-  // Metodo generico di aggiornamento (va ridefinito nelle sottoclassi)
-  update() {
-    console.warn("update() va implementato nella sottoclasse");
-  }
-}
-
-class BaseHandlers3 {
-  constructor(element, overlayLayer) {
-    this.element = element;           // Oggetto geometrico associato
-    this.overlayLayer = overlayLayer; // Layer SVG dove appendere bbox, handle, helplines
-    this.bBox = null;                 // <rect> bounding box
-    this.handles = [];                // array di <rect> per gli handle
-    this.helperLines = [];            // array di <line> per le linee di aiuto
-  }
-
-  // Crea il bbox tratteggiato
-  createBBox(x, y, width, height) {
-    if (this.bBox) this.overlayLayer.removeChild(this.bBox);
-
-    let rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    rect.setAttribute("x", x);
-    rect.setAttribute("y", y);
-    rect.setAttribute("width", width);
-    rect.setAttribute("height", height);
-    rect.setAttribute("fill", "none");
-    rect.setAttribute("stroke", "#00ffff");
-    rect.setAttribute("stroke-width", "1");
-    rect.setAttribute("stroke-dasharray", "4,2");
-    rect.setAttribute("vector-effect", "non-scaling-stroke");
-
-    this.overlayLayer.appendChild(rect);
-    this.bBox = rect;
-  }
-
-  // 🔹 Crea una singola maniglia
-  createHandle(x, y, size, type, cursor = "default", color = "#00ffff") {
-    let handle = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    handle.setAttribute("x", x - size / 2);
-    handle.setAttribute("y", y - size / 2);
-    handle.setAttribute("width", size);
-    handle.setAttribute("height", size);
-    handle.setAttribute("fill", color);
-    handle.setAttribute("stroke", "#000");
-    handle.setAttribute("stroke-width", "1");
-    handle.setAttribute("vector-effect", "non-scaling-stroke");
-    handle.dataset.type = type;
-    handle.style.cursor = cursor;
-
-    this.overlayLayer.appendChild(handle);
-    this.handles.push(handle);
-
-    return handle;
-  }
-
-  // Aggiunge una linea di aiuto
-  addHelperLine(x1, y1, x2, y2, color = "#ff00ff") {
-    let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", x1);
-    line.setAttribute("y1", y1);
-    line.setAttribute("x2", x2);
-    line.setAttribute("y2", y2);
-    line.setAttribute("stroke", color);
-    line.setAttribute("stroke-width", "1");
-    line.setAttribute("stroke-dasharray", "2,2");
-    line.setAttribute("vector-effect", "non-scaling-stroke");
-
-    this.overlayLayer.appendChild(line);
-    this.helperLines.push(line);
-    return line;
-  }
-
-  // Ripulisce tutte le help line
-  clearHelperLines() {
-    for (let l of this.helperLines) {
-      this.overlayLayer.removeChild(l);
-    }
-    this.helperLines = [];
-  }
-
-  // Mostra tutto (bbox + handles + helplines)
-  show() {
-    if (this.bBox) this.bBox.style.display = "block";
-    this.handles.forEach(h => h.style.display = "block");
-    this.helperLines.forEach(l => l.style.display = "block");
-  }
-
-  // Nasconde tutto
-  hide() {
-    if (this.bBox) this.bBox.style.display = "none";
-    this.handles.forEach(h => h.style.display = "none");
-    this.helperLines.forEach(l => l.style.display = "none");
-  }
-
-  // Metodo generico di aggiornamento (va ridefinito nelle sottoclassi)
-  update() {
-    console.warn("update() va implementato nella sottoclasse");
-  }
-}
 
 // BaseHandlers.js
 class BaseHandlers {
@@ -1628,8 +1344,8 @@ class BaseHandlers {
     this.element = element;
     this.overlayLayer = overlayLayer;
 
-    // Callbacks di default (no-op)
-    const noop = () => {};
+    // Callbacks di default (no-op)... non fa nulla
+    const noop = () => {console.log("faccio qualcosa");};
     this.callbacks = {
       onHandlePointerDown: callbacks.onHandlePointerDown || noop,
       onHandlePointerEnter: callbacks.onHandlePointerEnter || null,
@@ -1645,7 +1361,7 @@ class BaseHandlers {
     // ============ Crea BBox ============
     this.bBox = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     this.bBox.setAttribute("fill", "none");
-    this.bBox.setAttribute("stroke", "#00ffff");
+    this.bBox.setAttribute("stroke", "#000");
     this.bBox.setAttribute("stroke-width", "1");
     this.bBox.setAttribute("stroke-dasharray", "4,2");
     this.bBox.setAttribute("vector-effect", "non-scaling-stroke");
@@ -1766,10 +1482,10 @@ class BaseHandlers {
 
   /** Cambia i callbacks a runtime (opzionale) */
   setHandleCallbacks(callbacks = {}) {
-    this.callbacks = {
-      ...this.callbacks,
-      ...callbacks,
-    };
+    // questo serve ad aggiungere e/o aggiornare le callback
+    // tramite il merge delle callback comuni a this.callback 
+    // e all'oggetto passato
+    this.callbacks = { ...this.callbacks, ...callbacks,};
   }
 
   /** Rimuove tutti gli elementi dall’overlay (se devi distruggere l’istanza) */
@@ -1799,30 +1515,53 @@ class BaseHandlers {
     return h;
   }
 
-  #attachHandleListeners(handleEl, type) {
-    handleEl.addEventListener("pointerdown", (ev) => {
-      ev.stopPropagation();
-      ev.preventDefault();
-      this.callbacks.onHandlePointerDown(ev, this.element, handleEl, type, this);
-    });
+  #attachHandleListeners(handle, type) {
+    // pointerdown: decidiamo qui se "prendere" l'interazione o lasciarla passare
+    handle.addEventListener("pointerdown", (ev) => {
+      // Notare: non usiamo arrow->non-arrow per `this`? con arrow va bene perché siamo in classe.
+      const shouldCapture = (currentState === AppStates.SCALE || currentState === AppStates.ROTATE);
+
+      if (shouldCapture) {
+        ev.stopPropagation();
+        ev.preventDefault();
+
+        // Catturiamo il puntatore così riceviamo pointermove/up anche se il mouse esce dall'handle
+        try { handle.setPointerCapture(ev.pointerId); } catch (e) { /* fallback */ }
+
+        // Notifica alla callback (se presente) che l'handle è stato premuto
+        this.callbacks.onHandlePointerDown?.(ev, this.element, handle, type, this);
+
+        // Aggiungiamo listener per rilasciare la capture e fare cleanup
+        const onPointerUp = (upEv) => {
+          try { handle.releasePointerCapture(upEv.pointerId); } catch (e) {}
+          handle.removeEventListener("pointerup", onPointerUp);
+          // eventualmente altre pulizie...
+        };
+        handle.addEventListener("pointerup", onPointerUp);
+      } else {
+        // NON fermiamo la propagazione: lasciamo che la canvas (o il listener globale) gestisca la selezione / move
+        // Ma avvisiamo comunque la callback se vuole fare qualcosa "non intrusivo"
+        this.callbacks.onHandlePointerDown?.(ev, this.element, handle, type, this);
+      }
+    }, false);
 
     if (this.callbacks.onHandlePointerEnter) {
-      handleEl.addEventListener("pointerenter", (ev) => {
-        this.callbacks.onHandlePointerEnter(ev, this.element, handleEl, type, this);
+      handle.addEventListener("pointerenter", (ev) => {
+        this.callbacks.onHandlePointerEnter(ev, this.element, handle, type, this);
       });
     }
     if (this.callbacks.onHandlePointerLeave) {
-      handleEl.addEventListener("pointerleave", (ev) => {
-        this.callbacks.onHandlePointerLeave(ev, this.element, handleEl, type, this);
+      handle.addEventListener("pointerleave", (ev) => {
+        this.callbacks.onHandlePointerLeave(ev, this.element, handle, type, this);
       });
     }
   }
 
-  #positionRectHandle(handleEl, x, y, size) {
-    handleEl.setAttribute("x", x - size / 2);
-    handleEl.setAttribute("y", y - size / 2);
-    handleEl.setAttribute("width", size);
-    handleEl.setAttribute("height", size);
+  #positionRectHandle(handle, x, y, size) {
+    handle.setAttribute("x", x - size / 2);
+    handle.setAttribute("y", y - size / 2);
+    handle.setAttribute("width", size);
+    handle.setAttribute("height", size);
   }
 
   #cursorForType(type) {
@@ -2023,10 +1762,11 @@ class EllipseHandlers extends BaseHandlers {
   constructor(ellipse, overlayLayer, callbacks) {
     super(ellipse, overlayLayer, callbacks);
     // Eventuali helper lines/handles extra creati UNA SOLA VOLTA:
-    this.majorAxis = this.createHelperLine(0,0,0,0, true);
-    this.minorAxis = this.createHelperLine(0,0,0,0, true);
-    // es: this.focus1 = this.createHandle(..., "f1", "crosshair", "#ffa500");
-    //     this.focus2 = this.createHandle(..., "f2", "crosshair", "#ffa500");
+    this.majorAxis = this.createHelperLine(0,0,0,0, true, "#cccc00");
+    this.minorAxis = this.createHelperLine(0,0,0,0, true, "#00cccc");
+    
+    this.focus1 = this.createHandle(0,0,0, "f1", "crosshair", "#ffa500");
+    this.focus2 = this.createHandle(0,0,0, "f2", "crosshair", "#ffa500");
   }
 
   update() {
@@ -2044,8 +1784,10 @@ class EllipseHandlers extends BaseHandlers {
     this.minorAxis.setAttribute("x2", cx); this.minorAxis.setAttribute("y2", cy + ry);
 
     // se hai extra handle (fuochi, ecc.), posizionali con updateHandleRect(...)
-    // this.updateHandleRect(this.focus1, fx1, fy1);
-    // this.updateHandleRect(this.focus2, fx2, fy2);
+    let f1 = this.element.getFocusLoci().find(f => f.type==='focus1');
+    let f2 = this.element.getFocusLoci().find(f => f.type==='focus2');
+    this.updateHandleRect(this.focus1, f1.x, f1.y);
+    this.updateHandleRect(this.focus2, f2.x, f2.y);
   }
 }
 

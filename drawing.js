@@ -453,21 +453,30 @@ function endResizeElement(e, element, handleType) {
 
 /* ==== Funzioni di resize per ogni forma ==== */
 function resizeLine(el, orig, dx, dy, handleType) {
-  // dx, dy sono già in coordinate mondo, Y positiva verso l'alto
+  //console.log("handleType:", handleType, "dx:", dx, " dy:",dy);
   let { x1, y1, x2, y2 } = orig;
-  let x, y;
+  let x=0, y=0;
 
+  // nel caso la resize sia comandata da un handle appartenente 
+  // ad un'altra element, devo prevedere che possano essere 
+  // diversi da start, middle ed end
   switch (handleType) {
-    case "start": x = x1 += dx; y = y1 += dy; break;
-    case "end": x = x2 += dx; y = y2 += dy; break;
+    case "start": case "s": case "se": case "sw": 
+      x = x1+dx; 
+      y = y1+dy; 
+      handleType = "start"; 
+      break;
+    case "end": case "n":case "ne": case "nw": 
+      x = x2+dx; 
+      y = y2+dy; 
+      handleType = "end"; 
+      break;
     case "middle": 
       el.movePointTo("start", x1+dx/2, y1+dy/2); 
       el.movePointTo("end", x2-dx/2, y2-dy/2); 
       break;
   }
   if(handleType != "middle") el.movePointTo(handleType, x, y); 
-  
-  //updateElementPropertyControls(el);
 }
 
 /* ==== Rettangoli ==== */
@@ -481,13 +490,39 @@ function resizeRect(el, orig, dx, dy, handleType) {
       newX = orig.x - (newW-orig.width) / 2;
       newY = orig.y - (newH-orig.height) / 2;
   }
-  if (handleType.includes("n")) {newH = orig.height + dy;}
-  if (handleType.includes("e")) {newW = orig.width + dx;}  
-  if (handleType.includes("s")) {newH = orig.height - dy;     newY = orig.y + dy;}
-  if (handleType.includes("w")) {newX = orig.x + dx;      newW = orig.width - dx;}
+  if (handleType.includes("n")) {
+    newH = orig.height + dy;
+    if(newH < 0) {
+      newH = -newH;
+      newY = orig.y - newH;
+    }
+  }
+  if (handleType.includes("e")) {
+    newW = orig.width + dx;
+    if(newW < 0) {
+      newW = -newW;
+      newX = orig.x - newW;
+    }
+  }  
+  if (handleType.includes("s")) {
+    newH = orig.height - dy;     newY = orig.y + dy;
+    if(newH < 0) {
+      newH = -newH;
+      newY = orig.y + orig.height;
+    }    
+  }
+  if (handleType.includes("w")) {
+    newX = orig.x + dx;      newW = orig.width - dx;
+    if(newW < 0) {
+      newW = -newW;
+      newX = orig.x + orig.width;
+    }
+  }
+
+  
+  
   el.moveTo(newX, newY);
   el.resize(newW, newH);
-  //updateElementPropertyControls(el);
 }
 
 
@@ -500,59 +535,64 @@ function resizeCircle(el, orig, dx, dy, handleType) {
 
   // prendo una copia delle variabili di orig e le rinomino
   //let {cx: newCx, cy: newCy, r: newR} = orig;
+  // gestisco anche i valori negativi
   switch (handleType) {
       case "n": // lato nord, sud fisso
           r += dy / 2;
           cy += dy / 2;
+          if(r < 0){ r = -r; cy = orig.cy - orig.r + (dy + orig.r*2)/2;}
           break;
       case "s": // lato sud, nord fisso
           r -= dy / 2;
           cy += dy / 2;
+          if(r < 0){ r = -r; cy = orig.cy - orig.r + (dy + orig.r*2)/2;}
           break;
       case "e": // lato est, ovest fisso
           r += dx / 2;
           cx += dx / 2;
+          if(r < 0){ r = -r; cx = orig.cx - orig.r + (dx + orig.r*2)/2;}
           break;
       case "w": // lato ovest, est fisso
           r -= dx / 2;
           cx += dx / 2;
+          if(r < 0){ r = -r; cx = orig.cx - orig.r + (dx + orig.r*2)/2;}
           break;
       case "ne": // angolo nord-est, opposto sud-ovest fisso
           delta = Math.max(dx, dy);
           r += delta / 2;
           cx += delta / 2;
           cy += delta / 2;
+          if(r < 0){ r = -r; cx = orig.cx - orig.r + (delta + orig.r*2)/2;}
           break;
       case "nw": // angolo nord-ovest, opposto sud-est fisso
           delta = Math.max(-dx, dy);
           r += delta / 2;
           cx -= delta / 2;
           cy += delta / 2;
+          if(r < 0){ r = -r; cx = orig.cx + orig.r - (delta + orig.r*2)/2;}
           break;
       case "se": // angolo sud-est, opposto nord-ovest fisso
           delta = Math.max(dx, -dy);
           r += delta / 2;
           cx += delta / 2;
           cy -= delta / 2;
+          if(r < 0){ r = -r; cx = orig.cx - orig.r + (delta + orig.r*2)/2;}
           break;
       case "sw": // angolo sud-ovest, opposto nord-est fisso
           delta = Math.max(-dx, -dy);
           r += delta / 2;
           cx -= delta / 2;
           cy -= delta / 2;
+          if(r < 0){ r = -r; cx = orig.cx + orig.r - (delta + orig.r*2)/2;}
           break;
       case "c": // handle centrale → scala dal centro
           r += dy; // verso l’alto aumenta, verso il basso diminuisce
           break;
   }
 
-  // Evita valori negativi
-  if (r < 0) r = 0;
-
   // Aggiorna oggetto
   el.moveTo(cx, cy);
   el.resize(r);
-  //updateElementPropertyControls(el);
 }
 
 /* ==== Ellissi ==== */  
@@ -617,12 +657,17 @@ function resizeEllipse(el, orig, dx, dy, handleType) {
   }
 
   // Clamp per evitare valori negativi
-  if (rx < 0) rx = 0;
-  if (ry < 0) ry = 0;
+  if (rx < 0) {
+    rx = -rx;
+    cx = orig.cx - dx;
+  }
+  if (ry < 0) {
+    ry = -ry;
+    cy = orig.cy - dy;
+  }
 
   // Aggiorna l'oggetto
   // Aggiorna oggetto
   el.moveTo(cx, cy);
   el.resize(rx, ry);
-  //updateElementPropertyControls(el);
 }

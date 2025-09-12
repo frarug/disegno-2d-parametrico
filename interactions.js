@@ -50,7 +50,7 @@ document.addEventListener("keyup", (e) => {
 svg.addEventListener("mousedown", mousedownHandler);
 
 function mousedownHandler(e) {
-  console.log("mousedownHandler! AppStatus: ", currentState, ", stickyMode:", stickyMode);
+  //console.log("mousedownHandler! AppStatus: ", currentState, ", stickyMode:", stickyMode);
   //prendo il momento del mousedown e la posizione del mouse
   mouseDownTime = Date.now();
   lastX = e.clientX;
@@ -81,19 +81,19 @@ function mousedownHandler(e) {
   }
   // gestisco lo SCALE
   else if(currentState === AppStates.SCALE) {  
-    console.log("mousedown! currentState: ", AppStates.SCALE, ", stickyMode:", stickyMode);  
+    //console.log("mousedown! currentState: ", AppStates.SCALE, ", stickyMode:", stickyMode);  
     if (selectedElements.length === 0) return; // nessun oggetto selezionato    
-    //canvas.style.cursor = "grabbing";
-    // Salva stato iniziale dell'elemento
-    /*
-    element = selectedElements[selectedElements.length-1];
-    let orig = { ...element };
+    let handleType = e.target && e.target.dataset && e.target.dataset.type;
+    // gestione click su un handle
+    if(!handleType) return;
+    currentHandle = e.target;
     startScale.x = e.clientX;
     startScale.y = e.clientY;
-    document.addEventListener("mousemove", (e) => scaleDrag(e, orig));
-    document.addEventListener("mouseup", scaleEnd);
-    */
-    scaleStart(e);
+  
+    // copia gli stati iniziali degli elementi selezionati
+    currentScaleOrig = selectedElements.map(el => ({ el, orig: { ...el } }));
+    document.addEventListener("mousemove", scaleDrag);
+    document.addEventListener("mouseup", scaleEnd);  
   }
   // gestisce la selezione di oggetti sulla canvas
   else if (currentState === AppStates.DEFAULT) {
@@ -187,65 +187,21 @@ function moveEnd() {
 // variabili per la scala
 let currentScaleOrig = null;
 
-// ---- scaleStart ----
-function scaleStart(e) {
-  console.log("passo per scaleStart");
-  let handleType = e.target && e.target.dataset && e.target.dataset.type;
-  // gestione click su un handle
-  if(!handleType) return;
-  currentHandle = e.target;
-  startScale.x = e.clientX;
-  startScale.y = e.clientY;
 
-  // copia gli stati iniziali degli elementi selezionati
-  currentScaleOrig = selectedElements.map(el => ({ el, orig: { ...el } }));
-  document.addEventListener("mousemove", scaleDragWrapper);
-  document.addEventListener("mouseup", scaleEnd);
-}
-
-// ---- scaleDrag ----
-function scaleDragWrapper000(e) {
-  if (!currentScaleOrig) return;
-  const dx = (e.clientX - startScale.x) / (canvasZoomFactor * pxPerMM);
-  const dy = (e.clientY - startScale.y) / (canvasZoomFactor * pxPerMM);
-  for (let { el, orig } of currentScaleOrig) {
-    resizeElement(el, dx, dy, activeHandleType, orig);
-  }
-  renderCanvas();
-}
-
-// ---- scaleEnd ----
-function scaleEnd000(e) {
-  if (mouseDownTime + 300 > Date.now()) {
-    // fine "rapida": applica precisione
-    for (let { el } of currentScaleOrig) {
-      el.applyPrecision();
-    }
-    currentScaleOrig = null;
-
-    document.removeEventListener("mousemove", scaleDragWrapper);
-    document.removeEventListener("mouseup", scaleEnd);
-  }
-}
-
-function scaleDragWrapper(e) {
+function scaleDrag(e) {
   if (currentState !== AppStates.SCALE) return;
   if (!currentScaleOrig) return;
   //console.log(" scaleDrag...  currentState:", AppStates.MOVE, ", stickyMode:", stickyMode);
-  //let handleType = e.target && e.target.dataset && e.target.dataset.type;
-  // gestione click su un handle
-  //if(!handleType) return;
-
 
   handleType = currentHandle.dataset.type;
-  console.log("drag su un handle:", handleType);
+  //console.log("drag su un handle:", handleType);
   const dx = (e.clientX - startScale.x) / (canvasZoomFactor * pxPerMM);
   const dy = -(e.clientY - startScale.y) / (canvasZoomFactor * pxPerMM);
 
   //for (let el of selectedElements) {
   for (let { el, orig } of currentScaleOrig) {
     //resizeElement(element, dx, dy, handleType);
-    console.log("--> scale: element.type:", el.type);
+    //console.log("--> scaleDrag: element.type:", el.type, ", orig:",orig, ", dx:",dx, ", dy:",dy );
     switch (el.type) {
       case "line": resizeLine(el, orig, dx, dy, handleType); break;
       case "rect": resizeRect(el, orig, dx, dy, handleType); break;
@@ -263,7 +219,7 @@ function scaleDragWrapper(e) {
 
 function scaleEnd() {
   if((mouseDownTime +300) < Date.now() || stickyMode){
-    document.removeEventListener("mousemove", scaleDragWrapper);
+    document.removeEventListener("mousemove", scaleDrag);
     document.removeEventListener("mouseup", scaleEnd);
     for (let el of selectedElements) {
       el.applyPrecision();
