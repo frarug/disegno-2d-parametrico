@@ -49,9 +49,11 @@ function drawElements(svg) {
   for (const el of elements) {
     el.render(svg);
   }
+  /*
   for (const el of elements) {
       el.drawHandlers(svg);
   }
+  */
 }
 // FINE: Funzione principale di disegno
 
@@ -518,13 +520,9 @@ function resizeRect(el, orig, dx, dy, handleType) {
       newX = orig.x + orig.width;
     }
   }
-
-  
-  
   el.moveTo(newX, newY);
   el.resize(newW, newH);
 }
-
 
 /* ==== Cerchi ==== */
 function resizeCircle(el, orig, dx, dy, handleType) {
@@ -587,9 +585,9 @@ function resizeCircle(el, orig, dx, dy, handleType) {
           break;
       case "c": // handle centrale → scala dal centro
           r += dy; // verso l’alto aumenta, verso il basso diminuisce
+          if(r < 0){ r = -r;}
           break;
   }
-
   // Aggiorna oggetto
   el.moveTo(cx, cy);
   el.resize(r);
@@ -655,19 +653,79 @@ function resizeEllipse(el, orig, dx, dy, handleType) {
       rx *= ry/orig.ry;
       break;
   }
-
-  // Clamp per evitare valori negativi
-  if (rx < 0) {
-    rx = -rx;
-    cx = orig.cx - dx;
-  }
-  if (ry < 0) {
-    ry = -ry;
-    cy = orig.cy - dy;
-  }
-
-  // Aggiorna l'oggetto
+  // gestisco i valori negativi
+  if(rx < 0){ rx = -rx; cx = orig.cx - orig.rx + (dx + orig.rx*2)/2;}
+  if(ry < 0){ ry = -ry; cy = orig.cy - orig.ry + (dy + orig.ry*2)/2;}
   // Aggiorna oggetto
   el.moveTo(cx, cy);
   el.resize(rx, ry);
+}
+
+/* ==== Archi di cerchio ==== */  
+function resizeArc(el, orig, dx, dy, handleType) {
+  // dx e dy in coordinate mondo
+  let cx = orig.cx;
+  let cy = orig.cy;
+  let r  = orig.r;
+
+  // prendo una copia delle variabili di orig e le rinomino
+  //let {cx: newCx, cy: newCy, r: newR} = orig;
+  // gestisco anche i valori negativi
+  switch (handleType) {
+      case "n": // lato nord, sud fisso
+          r += dy / 2;
+          cy += dy / 2;
+          if(r < 0){ r = -r; cy = orig.cy - orig.r + (dy + orig.r*2)/2;}
+          break;
+      case "s": // lato sud, nord fisso
+          r -= dy / 2;
+          cy += dy / 2;
+          if(r < 0){ r = -r; cy = orig.cy - orig.r + (dy + orig.r*2)/2;}
+          break;
+      case "e": // lato est, ovest fisso
+          r += dx / 2;
+          cx += dx / 2;
+          if(r < 0){ r = -r; cx = orig.cx - orig.r + (dx + orig.r*2)/2;}
+          break;
+      case "w": // lato ovest, est fisso
+          r -= dx / 2;
+          cx += dx / 2;
+          if(r < 0){ r = -r; cx = orig.cx - orig.r + (dx + orig.r*2)/2;}
+          break;
+      case "ne": // angolo nord-est, opposto sud-ovest fisso
+          delta = Math.max(dx, dy);
+          r += delta / 2;
+          cx += delta / 2;
+          cy += delta / 2;
+          if(r < 0){ r = -r; cx = orig.cx - orig.r + (delta + orig.r*2)/2;}
+          break;
+      case "nw": // angolo nord-ovest, opposto sud-est fisso
+          delta = Math.max(-dx, dy);
+          r += delta / 2;
+          cx -= delta / 2;
+          cy += delta / 2;
+          if(r < 0){ r = -r; cx = orig.cx + orig.r - (delta + orig.r*2)/2;}
+          break;
+      case "se": // angolo sud-est, opposto nord-ovest fisso
+          delta = Math.max(dx, -dy);
+          r += delta / 2;
+          cx += delta / 2;
+          cy -= delta / 2;
+          if(r < 0){ r = -r; cx = orig.cx - orig.r + (delta + orig.r*2)/2;}
+          break;
+      case "sw": // angolo sud-ovest, opposto nord-est fisso
+          delta = Math.max(-dx, -dy);
+          r += delta / 2;
+          cx -= delta / 2;
+          cy -= delta / 2;
+          if(r < 0){ r = -r; cx = orig.cx + orig.r - (delta + orig.r*2)/2;}
+          break;
+      case "c": // handle centrale → scala dal centro
+          r += dy; // verso l’alto aumenta, verso il basso diminuisce
+          if(r < 0){ r = -r;}
+          break;
+  }
+  // Aggiorna oggetto
+  el.moveTo(cx, cy);
+  el.resize(r);
 }

@@ -9,14 +9,14 @@ const elementsLayer  = document.getElementById("elements-layer");
 const axesLayer      = document.getElementById("axes-layer");
 const overlayLayer   = document.getElementById("overlay-layer");
 
-// Offset e zoom della canvas
-let canvasOffsetX = 4; // offset in millimetri
-let canvasOffsetY = 4; // offset in millimetri
-let canvasZoomFactor = 1.0;
-
 // Dimensione area di lavoro 
 let canvasWidth = window.innerWidth;
 let canvasHeight = window.innerHeight;
+
+// Offset e zoom della canvas
+let canvasOffsetX = canvasWidth/2; // offset in millimetri
+let canvasOffsetY = canvasHeight/4; // offset in millimetri
+let canvasZoomFactor = 1.0;
 
 // Unità di misura, precisione e griglia
 let currentUnit = "mm";         // "mm", "cm", "px"

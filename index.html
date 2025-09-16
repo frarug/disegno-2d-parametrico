@@ -45,12 +45,13 @@
       initDrawingCanvas(); // Inizializza SVG e disegno
       //forme di prova
       addShapeToCanvas("rect", new Rect(20, 16, 20, 40, {fill:"#ffaa00", fillOpacity:0.6}));
-      addShapeToCanvas("circle", new Circle(3, 6, 40, {fill:"#ffffaa", fillOpacity:0.6}));
+      addShapeToCanvas("circle", new Circle(30, 60, 40, {fill:"#ffffaa", fillOpacity:0.6}));
       addShapeToCanvas("line", new Line(3, 6, 20, 40, {stroke:"#ff0000", strokeWidth:4, strokeOpacity:0.4}));
       addShapeToCanvas("line", new Line(30, 26, 50, 60, {stroke:"#ffff00", strokeWidth:2, strokeOpacity:0.8}));
-      //addShapeToCanvas("circle", new Circle(32, 136, 60, {fill:"#00ffaa", fillOpacity:0.7}));
+      addShapeToCanvas("circle", new Circle(32, 136, 60, {fill:"#00ffaa", fillOpacity:0.7}));
       addShapeToCanvas("ellipse", new Ellipse(62, 186, 60, 45, {fill:"#d62e7f", fillOpacity:0.8}));
-      //addShapeToCanvas("arc", new Arc(162, 200, 160, 0, 30, 1, 1, {fill:"#d62e7f", fillOpacity:0.8}));
+      addShapeToCanvas("arc", new Arc(0, 0, 40, 0, 130, 1, 1, {fill:"#bad62e", fillOpacity:0.8}));
+      //addShapeToCanvas("arc", new Arc2(162, 200, 160, 0, 30, 1, 1, {fill:"#d62e7f", fillOpacity:0.8}));
       //addShapeToCanvas("ellipse-arc", EllipseArc.fromCenter(100, 200, 80, 40, 370, 765, 30, {fill:"#2867b8", fillOpacity:0.8}));
       //fine forme di prova
       renderCanvas();

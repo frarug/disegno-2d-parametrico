@@ -48,6 +48,11 @@ document.addEventListener("keyup", (e) => {
 //  currentState, previousState e startPan {x, y} sono variabili globali definite in globals.js
 // aggiungo il listener per il mousedown alla canvas
 svg.addEventListener("mousedown", mousedownHandler);
+svg.addEventListener("mousemove", mouseMove);
+
+function mouseMove(e) {
+  updatePointerPosition(e.clientX, e.clientY);
+}
 
 function mousedownHandler(e) {
   //console.log("mousedownHandler! AppStatus: ", currentState, ", stickyMode:", stickyMode);
@@ -69,7 +74,7 @@ function mousedownHandler(e) {
   }
   // gestisce lo spostamento di oggetti sulla canvas
   else if (currentState === AppStates.MOVE) {
-    console.log("mousedown! currentState: ", AppStates.MOVE, ", stickyMode:", stickyMode);
+    //console.log("mousedown! currentState: ", AppStates.MOVE, ", stickyMode:", stickyMode);
     if (selectedElements.length === 0) return; // nessun oggetto selezionato
     //svg.style.cursor = "move";
     // Salva stato iniziale in base al tipo
@@ -97,7 +102,7 @@ function mousedownHandler(e) {
   }
   // gestisce la selezione di oggetti sulla canvas
   else if (currentState === AppStates.DEFAULT) {
-    console.log("mousedown! currentState: ", AppStates.DEFAULT, ", stickyMode:", stickyMode);
+    //console.log("mousedown! currentState: ", AppStates.DEFAULT, ", stickyMode:", stickyMode);
     const clickedElement = getElementAtPosition(e.clientX, e.clientY);
     selectElement(e, clickedElement);
     //if(clickedElement) clickedElement.handler.adjustPosition();
@@ -113,20 +118,20 @@ function doNothing(e) {
 function selectElement(e, el){
   if(el){
     if (e.shiftKey) {  // Toggle selezione multipla
-      el.selected = !el.selected;
+      el.select(!el.selected);
       if (el.selected) selectedElements.push(el);
       else selectedElements.splice(selectedElements.findIndex(obj  => obj.id === el.id), 1);
     } else {   // Selezione singola       
-        elements.forEach(obj => obj.selected = false);
-        el.selected = true;
+        elements.forEach(obj => obj.select(false));
+        el.select(true);
         selectedElements.length = 0;
         selectedElements.push(el);
     }
   }else{ // selezione nulla
-    elements.forEach(obj => obj.selected = false);
+    elements.forEach(obj => obj.select(false));
     selectedElements.length = 0;
   }
-  console.log(selectedElements.length);
+  console.log(selectedElements);
   loadElementPropertyControls(); // carica il file delle proprietà dell'elemento el
   updatePaletteElmentListSelection(); // colora le righe degli oggetti selezionati 
   renderCanvas();
@@ -152,7 +157,7 @@ function panEnd() {
 
 function moveDrag(e) {
   if (currentState !== AppStates.MOVE) return;
-  console.log(" moveDrag...  currentState:", AppStates.MOVE, ", stickyMode:", stickyMode);
+  //console.log(" moveDrag...  currentState:", AppStates.MOVE, ", stickyMode:", stickyMode);
   const dxScreen = e.clientX - startMove.x;
   const dyScreen = e.clientY - startMove.y;
   // Conversione da pixel a unità mondo
@@ -177,11 +182,12 @@ function moveEnd() {
     for (let el of selectedElements) {
       el.applyPrecision();
     }
+    updateElementPropertyControls(selectedElements[selectedElements.length-1]);
     stickyMode = false;
   }else{
     stickyMode = true;
   }
-  console.log("stickyMode:", stickyMode);
+  //console.log("stickyMode:", stickyMode);
 }
 
 // variabili per la scala
@@ -207,6 +213,7 @@ function scaleDrag(e) {
       case "rect": resizeRect(el, orig, dx, dy, handleType); break;
       case "circle": resizeCircle(el, orig, dx, dy, handleType); break;
       case "ellipse": resizeEllipse(el, orig, dx, dy, handleType); break;
+      case "arc": resizeArc(el, orig, dx, dy, handleType); break;
       // Qui in futuro possiamo aggiungere poligoni, archi ecc.
     }
     
@@ -227,7 +234,8 @@ function scaleEnd() {
     stickyMode = false;
     currentScaleOrig = null;
     currentHandle = null;
-    console.log("listener rimossi!!!!!!!!  stickyMode:", stickyMode);
+    //console.log("listener rimossi!!!!!!!!  stickyMode:", stickyMode);
+    updateElementPropertyControls(selectedElements[selectedElements.length-1]);
   }else {
     stickyMode = true;
   }

@@ -7,21 +7,25 @@ class Shape {
   }
 
   getBoundingBox() {
-    return {x:0, y:0, width:100, height:100};
+    throw new Error("getBoundingBox() deve essere implementato dalla sottoclasse ", this.type);
   }
 
   // Arrotonda un singolo valore alla precisione corrente
-  applyPrecision(value) {
-    return roundToPrecision(value, canvasPrecision);
+  applyPrecision() {
+    throw new Error("applyPrecision() deve essere implementato dalla sottoclasse ", this.type);
   }
 
   // Arrotonda più proprietà di questa istanza
   applyPrecisionToProps(...props) {
     for (let prop of props) {
       if (this[prop] !== undefined) {
-        this[prop] = this.applyPrecision(this[prop]);
+        this[prop] = roundToPrecision(this[prop], canvasPrecision);
       }
     }
+  }
+
+  select (s){
+    throw new Error("select() deve essere implementato dalla sottoclasse ", this.type); 
   }
 }
 
@@ -46,7 +50,7 @@ class Line extends Shape {
     else this.strokeStyle = strokeStyle;
 
     this.visible = visible;
-    this.selected = selected ?? false; 
+    this.select(selected ?? false); 
 
     // creo l'aggetto svg
     this.svgElement = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -55,32 +59,31 @@ class Line extends Shape {
     // Applico all'oggetto svg lo stile del bordo
     applyStrokeStyle(this.svgElement, this.strokeStyle);
 
-    // creo l'handler
-    this.handler = new Handler(
-      Math.min(this.x1, this.x2),
-      Math.min(this.y1, this.y2),  
-      Math.abs(this.x1-this.x2),
-      Math.abs(this.y1-this.y2), 
-      overlayLayer, this);   
-
     // preparo per la visualizzazione
     this.render(null);
     // attacco l'oggetto svg al layer degli elementi
     elementsLayer.appendChild(this.svgElement);
-    // attacco l'handler al layer "ovelay" (sopra a tutti)
-    this.handler.attach(overlayLayer);
+  }
+
+  // se l'oggetto è selezionato e non c'è ancora l'handler, lo creo
+  select (selected) {
+    //console.log("line.select(", selected, ")");
+    this.selected = selected;
+    if(this.selected && !this.handler) {
+      this.handler = new Handler(Math.min(this.x1, this.x2), Math.min(this.y1, this.y2),  
+                      Math.abs(this.x1-this.x2), Math.abs(this.y1-this.y2), overlayLayer, this);
+      // attacco l'handler al layer "ovelay" (sopra a tutti)
+      this.handler.attach(overlayLayer);
+    }
   }
 
   render(layer) {
     if(!this.visible) this.svgElement.style.display = "none";
     else this.svgElement.style.display = "inline";
 
+    if(!this.handler) return;
     if(!this.visible || !this.selected) this.handler.hide();
     else this.handler.show();
-  }
-
-  drawHandlers(svg){
-    
   }
 
   // ritorna un bBox allargato se la linea è praticamente vericale o praticamente orizzontale
@@ -99,8 +102,8 @@ class Line extends Shape {
     return {x:Math.min(this.x1, this.x2)-dw, y:Math.min(this.y1, this.y2)-dh, w, h};
   }
   movePointTo(point, x, y) {
-    x = roundToPrecision(x, canvasPrecision);
-    y = roundToPrecision(y, canvasPrecision);
+    //x = roundToPrecision(x, canvasPrecision);
+    //y = roundToPrecision(y, canvasPrecision);
     if(point == "start") {
       this.x1 = x;
       this.y1 = y;
@@ -109,11 +112,11 @@ class Line extends Shape {
       this.y2 = y;
     }
     this.updateSvg();
-    this.handler.adjustPosition();
+    this.handler.update();
   }
   movePointBy(point, dx, dy) {
-    dx = roundToPrecision(dx, canvasPrecision);
-    dy = roundToPrecision(dy, canvasPrecision);
+    //dx = roundToPrecision(dx, canvasPrecision);
+    //dy = roundToPrecision(dy, canvasPrecision);
     if(point == "start") {
       this.x1 += dx;
       this.y1 += dy;
@@ -122,16 +125,22 @@ class Line extends Shape {
       this.y2 += dy;
     }
     this.updateSvg();
-    this.handler.adjustPosition();
+    this.handler.update();
   }
   
   moveBy(dx, dy) {
+    /*
     this.x1 = roundToPrecision(this.x1 += dx, canvasPrecision);
     this.y1 = roundToPrecision(this.y1 += dy, canvasPrecision);
     this.x2 = roundToPrecision(this.x2 += dx, canvasPrecision);
     this.y2 = roundToPrecision(this.y2 += dy, canvasPrecision);
+    */
+    this.x1 += dx
+    this.y1 += dy
+    this.x2 += dx
+    this.y2 += dy
     this.updateSvg();
-    this.handler.adjustPosition();
+    this.handler.update();
   }
 
   updateSvg() {
@@ -151,6 +160,15 @@ class Line extends Shape {
     const py = this.y1 + t * dy;
     const distSq = (x - px) * (x - px) + (y - py) * (y - py);
     return distSq <= tolerance * tolerance;
+  }
+
+  applyPrecision() {
+    this.x1 = roundToPrecision(this.x1, canvasPrecision);
+    this.y1 = roundToPrecision(this.y1, canvasPrecision);
+    this.x2 = roundToPrecision(this.x2, canvasPrecision);
+    this.y2 = roundToPrecision(this.y2, canvasPrecision);
+    this.updateSvg();
+    this.handler.update();
   }
 }
 // === definizione classe Rect ===
@@ -175,7 +193,7 @@ class Rect extends Shape {
     this.strokeStyle = strokeStyle ?? structuredClone(defaultStrokeStyle);
 
     this.visible = visible;
-    this.selected = selected ?? false; 
+    this.select(selected ?? false); 
 
     // creo l'elemento svg
     this.svgElement = document.createElementNS("http://www.w3.org/2000/svg", "rect");
@@ -186,70 +204,71 @@ class Rect extends Shape {
     //applico lo stile del bordo
     applyStrokeStyle(this.svgElement, this.strokeStyle);
 
-    // creo l'handler
-    this.handler = new Handler(this.x, this.y, this.width, this.height, overlayLayer, this);
-
     // preparo per la visualizzazione
     this.render(null);
     // attacco l'oggetto svg al layer degli elementi
     elementsLayer.appendChild(this.svgElement);
-    // attacco l'handler al layer "ovelay" (sopra a tutti)
-    this.handler.attach(overlayLayer);
+  }
+
+  // se l'oggetto è selezionato e non c'è ancora l'handler, lo creo
+  select(selected) {
+    //console.log("rect.select(", selected, ")");
+    this.selected = selected;
+    if(selected && !this.handler) {
+      this.handler = new Handler(this.x, this.y, this.width, this.height, overlayLayer, this);
+      // attacco l'handler al layer "ovelay" (sopra a tutti)
+      this.handler.attach(overlayLayer);
+    }
   }
   
   render(svg) {
-
     if(!this.visible) this.svgElement.style.display = "none";
     else this.svgElement.style.display = "inline";
 
+    if(!this.handler) return;
     if(!this.visible || !this.selected) this.handler.hide();
     else this.handler.show();
-    /*
-    if (!this.visible) return;
-    const shape = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    shape.setAttribute("x", this.x);
-    shape.setAttribute("y", this.y); 
-    shape.setAttribute("width", this.width);
-    shape.setAttribute("height", this.height);
-    // applica lo stile del riempimento
-    shape.setAttribute("fill", this.fillStyle.fill || "none");
-    shape.setAttribute("fill-opacity", this.fillStyle.fillOpacity ?? 1);
-    //applica lo stile del bordo
-    applyStrokeStyle(shape, this.strokeStyle);
-    svg.appendChild(shape);
-    */
   }
 
   // secondo me il nome giusto di questa funzione è "translate"
-  moveBy(dx, dy) {
-    this.x = roundToPrecision(this.x += dx, canvasPrecision);
-    this.y = roundToPrecision(this.y += dy, canvasPrecision);
+  moveBy(dx, dy, withPrecision) {
+    this.x += dx;
+    this.y += dy;
+    if(withPrecision) {
+      this.x = roundToPrecision(this.x, canvasPrecision);
+      this.y = roundToPrecision(this.y, canvasPrecision);
+    }
     this.updateSvg(); 
-    this.handler.adjustPosition();
+    this.handler.update();
   }
 
   moveTo(x, y){
-    this.x = roundToPrecision(this.x = x, canvasPrecision);
-    this.y = roundToPrecision(this.y = y, canvasPrecision);
+    //this.x = roundToPrecision(this.x = x, canvasPrecision);
+    //this.y = roundToPrecision(this.y = y, canvasPrecision);
+    this.x = x;
+    this.y = y;
     this.updateSvg();
-    this.handler.adjustPosition();
+    this.handler.update();
   }
 
   resize(w, h){
-    this.width = roundToPrecision(this.width = w, canvasPrecision);
-    this.height = roundToPrecision(this.height = h, canvasPrecision);
+    //this.width = roundToPrecision(this.width = w, canvasPrecision);
+    //this.height = roundToPrecision(this.height = h, canvasPrecision);
+    this.width = w;
+    this.height = h;
     this.updateSvg();
-    this.handler.adjustPosition();
+    this.handler.update();
   }
 
-  // disegna gli handlers se è selezionato
-  drawHandlers(svg){
-    /*
-    if(!this.visible || !this.selected) return;
-    let handler = null;
-    handler = new Handler(this.x, this.y, this.width, this.height, svg, this);
-    */
+  applyPrecision() {
+    this.x = roundToPrecision(this.x, canvasPrecision);
+    this.y = roundToPrecision(this.y, canvasPrecision);
+    this.width = roundToPrecision(this.width, canvasPrecision);
+    this.height = roundToPrecision(this.height, canvasPrecision);
+    this.updateSvg();
+    this.handler.update();
   }
+
   getBoundingBox() {
     return {x:this.x, y:this.y, width:this.width, height:this.height};
   }
@@ -289,7 +308,7 @@ class Circle extends Shape {
     this.strokeStyle = strokeStyle ?? structuredClone(defaultStrokeStyle);
 
     this.visible = visible;
-    this.selected = selected ?? false;
+    this.select(selected ?? false);
 
     // creo l'elemento svg
     this.svgElement = document.createElementNS("http://www.w3.org/2000/svg", "circle");
@@ -300,66 +319,56 @@ class Circle extends Shape {
     //applico lo stile del bordo
     applyStrokeStyle(this.svgElement, this.strokeStyle);
 
-    // creo l'handler
-    this.handler = new Handler(this.cx-this.r, this.cy-this.r, this.r*2, this.r*2, overlayLayer, this);
-
     // preparo per la visualizzazione
     this.render(null);
     // attacco l'oggetto svg al layer degli elementi
     elementsLayer.appendChild(this.svgElement);
-    // attacco l'handler al layer "ovelay" (sopra a tutti)
-    this.handler.attach(overlayLayer);
+  }
+
+  // se l'oggetto è selezionato e non c'è ancora l'handler, lo creo
+  select(selected) {
+    //console.log("circle.select(", selected, ")");
+    this.selected = selected;
+    if(this.selected && !this.handler) {
+      this.handler = new Handler(this.cx-this.r, this.cy-this.r, this.r*2, this.r*2, overlayLayer, this);
+      // attacco l'handler al layer "ovelay" (sopra a tutti)
+      this.handler.attach(overlayLayer);    
+    }
   }
 
   render(svg) {
     if(!this.visible) this.svgElement.style.display = "none";
     else this.svgElement.style.display = "inline";
 
+    if(!this.handler) return;
     if(!this.visible || !this.selected) this.handler.hide();
     else this.handler.show();
-    /*
-    if (!this.visible) return;
-    const shape = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-    shape.setAttribute("cx", this.cx);
-    shape.setAttribute("cy", this.cy); 
-    shape.setAttribute("r", this.r);
-    //applica lo stile del bordo
-    shape.setAttribute("fill", this.fillStyle.fill || "none");
-    shape.setAttribute("fill-opacity", this.fillStyle.fillOpacity ?? 1);
-    //applica lo stile del bordo
-    applyStrokeStyle(shape, this.strokeStyle);
-    svg.appendChild(shape);  
-    */      
   }
 
   // secondo me il nome giusto di questa funzione è "translate"
   moveBy(dx, dy) {
-    this.cx = roundToPrecision(this.cx += dx, canvasPrecision);
-    this.cy = roundToPrecision(this.cy += dy, canvasPrecision);
+    //this.cx = roundToPrecision(this.cx += dx, canvasPrecision);
+    //this.cy = roundToPrecision(this.cy += dy, canvasPrecision);
+    this.cx += dx;
+    this.cy += dy;
     this.updateSvg(); 
-    this.handler.adjustPosition();
+    this.handler.update();
   }
 
   moveTo(x, y){
-    this.cx = roundToPrecision(this.cx = x, canvasPrecision);
-    this.cy = roundToPrecision(this.cy = y, canvasPrecision);
+    //this.cx = roundToPrecision(this.cx = x, canvasPrecision);
+    //this.cy = roundToPrecision(this.cy = y, canvasPrecision);
+    this.cx = x;
+    this.cy = y;
     this.updateSvg();
-    this.handler.adjustPosition();
+    this.handler.update();
   }
 
   resize(r){
-    this.r = roundToPrecision(this.r = r, canvasPrecision);
+    //this.r = roundToPrecision(this.r = r, canvasPrecision);
+    this.r = r;
     this.updateSvg();
-    this.handler.adjustPosition();
-  }
-
-  // disegna gli handlers se è selezionato
-  drawHandlers(svg){
-    /*
-    if(!this.visible || !this.selected) return;
-    let handler = null;
-    handler = new Handler(this.cx-this.r, this.cy-this.r, this.r*2, this.r*2, svg, this);
-    */
+    this.handler.update();
   }
 
   getBoundingBox() {
@@ -376,6 +385,13 @@ class Circle extends Shape {
     const dx = x - this.cx;
     const dy = y - this.cy;
     return (dx * dx + dy * dy) <= (this.r * this.r);
+  }
+  applyPrecision() {
+    this.cx = roundToPrecision(this.cx, canvasPrecision);
+    this.cy = roundToPrecision(this.cy, canvasPrecision);
+    this.r = roundToPrecision(this.r, canvasPrecision);
+    this.updateSvg();
+    this.handler.update();
   }
 }
 // === definizione classe Ellipse ===
@@ -400,7 +416,7 @@ class Ellipse extends Shape {
     this.strokeStyle = strokeStyle ?? structuredClone(defaultStrokeStyle);
 
     this.visible = visible;
-    this.selected = selected ?? false;
+    this.select(selected ?? false);
 
     // creo l'elemento svg
     this.svgElement = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
@@ -411,50 +427,33 @@ class Ellipse extends Shape {
     //applico lo stile del bordo
     applyStrokeStyle(this.svgElement, this.strokeStyle);
 
-    // creo l'handler
-    //this.handler = new Handler(this.cx-this.rx, this.cy-this.ry, this.rx*2, this.ry*2, svg, this);
-    this.handler = new EllipseHandlers(
-      this,
-      overlayLayer,
-      { onHandlePointerDown: defaultHandleAdapter }
-    );
-
-    // creo i parametri geometrici
-    //this.geoParams = 
-
     // preparo per la visualizzazione
     this.render(null);
     // attacco l'oggetto svg al layer degli elementi
     elementsLayer.appendChild(this.svgElement);
-    // attacco l'handler al layer "ovelay" (sopra a tutti)
-    //this.handler.attach(overlayLayer);
+  }
+
+  // se l'oggetto è selezionato e non c'è ancora l'handler, lo creo
+  select(selected) {
+    //console.log("ellipse.select(", selected, ")");
+    this.selected = selected;
+    if(this.selected && !this.handler) {
+      this.handler = new Handler(this.cx-this.rx, this.cy-this.ry, this.rx*2, this.ry*2, overlayLayer, this);
+      this.handler.attach(overlayLayer);
+      //this.handler = new EllipseHandlers(this, overlayLayer, { onHandlePointerDown: defaultHandleAdapter });
+    }
   }
 
   render(svg) {
     if(!this.visible) this.svgElement.style.display = "none";
     else this.svgElement.style.display = "inline";
 
+    if(!this.handler) return;
     if(!this.visible || !this.selected) this.handler.hideAll();
     else {
       this.handler.update(); 
       this.handler.showAll();
     }
-    /*
-    if (!this.visible) return;
-    const shape = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
-  
-    shape.setAttribute("cx", this.cx);
-    shape.setAttribute("cy", this.cy);
-    shape.setAttribute("rx", this.rx);
-    shape.setAttribute("ry", this.ry);
-  
-    //applica lo stile del bordo
-    shape.setAttribute("fill", this.fillStyle.fill || "none");
-    shape.setAttribute("fill-opacity", this.fillStyle.fillOpacity ?? 1);
-    //applica lo stile del bordo
-    applyStrokeStyle(shape, this.strokeStyle);
-    svg.appendChild(shape); 
-    */
   }
 
   // secondo me il nome giusto di questa funzione è "translate"
@@ -462,34 +461,25 @@ class Ellipse extends Shape {
     this.cx = roundToPrecision(this.cx += dx, canvasPrecision);
     this.cy = roundToPrecision(this.cy += dy, canvasPrecision);
     this.updateSvg(); 
-    //this.handler.adjustPosition();
     this.handler.update();
   }
 
   moveTo(x, y){
-    this.cx = roundToPrecision(this.cx = x, canvasPrecision);
-    this.cy = roundToPrecision(this.cy = y, canvasPrecision);
+    //this.cx = roundToPrecision(this.cx = x, canvasPrecision);
+    //this.cy = roundToPrecision(this.cy = y, canvasPrecision);
+    this.cx = x;
+    this.cy = y;
     this.updateSvg();
-    //this.handler.adjustPosition();
     this.handler.update();
   }
 
   resize(rx, ry){
-    this.rx = roundToPrecision(this.rx = rx, canvasPrecision);
-    this.ry = roundToPrecision(this.ry = ry, canvasPrecision);
+    //this.rx = roundToPrecision(this.rx = rx, canvasPrecision);
+    //this.ry = roundToPrecision(this.ry = ry, canvasPrecision);
+    this.rx = rx;
+    this.ry = ry;
     this.updateSvg();
-    //this.handler.adjustPosition();
     this.handler.update();
-  }
-
-  // disegna gli handlers se è selezionato
-  drawHandlers(overlayLayer){
-    /*
-    if(!this.visible || !this.selected) return;
-    let handler = null;
-    handler = new Handler(this.cx-this.rx, this.cy-this.ry, this.rx*2, this.ry*2, svg, this);
-    */
-    //this.drawParams(layer, true, true, true, true);
   }
 
   getBoundingBox() {
@@ -508,6 +498,15 @@ class Ellipse extends Shape {
       const dx = (x - this.cx) / this.rx;
       const dy = (y - this.cy) / this.ry;
       return (dx * dx + dy * dy) <= 1;
+  }
+
+  applyPrecision() {
+    this.cx = roundToPrecision(this.cx, canvasPrecision);
+    this.cy = roundToPrecision(this.cy, canvasPrecision);
+    this.rx = roundToPrecision(this.rx, canvasPrecision);
+    this.ry = roundToPrecision(this.ry, canvasPrecision);
+    this.updateSvg();
+    this.handler.update();
   }
 
   drawParams(layer, center=false, focusLoci=false, majorAxis=false, minorAxis=false, extremePoints=false, bbox=false){
@@ -626,17 +625,369 @@ class Arc extends Shape {
     this.cx = cx;
     this.cy = cy;
     this.r = r;
-    this.startAngle = startAngle;
-    this.endAngle = endAngle;
-    this.sweepFlag = sweepFlag;
-    this.largeArcFlag = largeArcFlag;
+    this.startAngle = startAngle < 0 ? startAngle += 360 : startAngle;
+    this.endAngle = endAngle < 0 ? endAngle += 360 : endAngle;
+
+    this.sweepFlag = (endAngle > startAngle)? 1 : 0;
+    this.largeArcFlag = (endAngle - startAngle >= 180)? 1 : 0;;
     // Applica precisione iniziale
     this.applyPrecisionToProps("cx", "cy", "r");
     this.fillStyle = fillStyle ?? structuredClone(defaultFillStyle);
     this.strokeStyle = strokeStyle ?? structuredClone(defaultStrokeStyle);
     this.visible = visible;
-    this.selected = selected ?? false;
+    this.select(selected ?? false);
 
+    const angleToRad = angle => (angle * Math.PI) / 180;
+  // Calcola i punti iniziale e finale in coordinate mondo
+    this.x1 = this.cx + this.r * Math.cos(angleToRad(this.startAngle));
+    this.y1 = this.cy + this.r * Math.sin(angleToRad(this.startAngle));
+    this.x2 = this.cx + this.r * Math.cos(angleToRad(this.endAngle));
+    this.y2 = this.cy + this.r * Math.sin(angleToRad(this.endAngle));
+  
+
+    this.rotation = 0;
+
+    const d = `M ${this.x1} ${this.y1} A ${this.r} ${this.r} 0 ${this.largeArcFlag} ${this.sweepFlag} ${this.x2} ${this.y2}`;
+    //console.log("d:", d);
+    this.svgElement = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    this.svgElement.setAttribute("d", d);
+
+    //applica lo stile del riempimento
+    applyFillStyle(this.svgElement, this.fillStyle);
+    //applica lo stile del bordo
+    applyStrokeStyle(this.svgElement, this.strokeStyle);
+    elementsLayer.appendChild(this.svgElement);
+  }
+
+  // se l'oggetto è selezionato e non c'è ancora l'handler, lo creo
+  select(selected) {
+    this.selected = selected;
+    if(this.selected && !this.handler) {
+      this.handler = this.drawHandlers(null);
+      this.handler.attach(overlayLayer);
+      //this.handler = new EllipseHandlers(this, overlayLayer, { onHandlePointerDown: defaultHandleAdapter });
+    }
+  }
+
+  render(svg) {
+    if(!this.visible) this.svgElement.style.display = "none";
+    else this.svgElement.style.display = "inline";
+
+    if(!this.handler) return;
+    if(!this.visible || !this.selected) this.handler.hideAll();
+    else {
+      this.handler.update(); 
+      this.handler.showAll();
+    }
+  }
+
+  updateSvg(){
+    const d = `M ${this.x1} ${this.y1} A ${this.r} ${this.r} 0 ${this.largeArcFlag} ${this.sweepFlag} ${this.x2} ${this.y2}`;
+    console.log("d:", d);
+    this.svgElement.setAttribute("d", d);
+  }
+
+  drawHandlers(layer){
+    if(!this.visible || !this.selected) return;
+    const startRad = (Math.PI / 180) * this.startAngle;
+    const endRad   = (Math.PI / 180) * this.endAngle;
+    let x1 = this.cx + this.r*Math.cos(startRad);
+    let y1 = this.cy + this.r*Math.sin(startRad);
+    let x2 = this.cx + this.r*Math.cos(endRad);
+    let y2 = this.cy + this.r*Math.sin(endRad);
+    let w = Math.abs(x2-x1);
+    let h = Math.abs(y2-y1);
+    return new Handler(Math.min(x1, x2), Math.min(y1, y2), w, h, layer, this);
+  }
+
+  getBoundingBox() {
+    // per un aarco di cerchio il BBox dovrebbe essere 
+    // calcolato in base ai quadranti in cui ricadono 
+    // startAngle e endAngle.
+    // Ipotizziamo che starAngle è individuato dal P1 (x1, y1) e
+    // endAngle è individuato da P2(x2, y2).
+    // Quindi se entrambe ricadono nello stesso quadrante 
+    // il BBox è quello del cerchio
+    // Se ricadono nel primo e secondo quadrante il BBox ha una altezza
+    // pari al massimo dei due punti sulla circonferenza.
+    // Se nel primo e terzo Il Bbox ha height = y1 e x = x2
+    // Se nel primo e quarto il Bbox ha width = max(x1, x2)
+    // ecc. ecc.
+    // per ora noi prendiamo il BBox uguale a quello del cerchio
+    /*
+    const startRad = (Math.PI / 180) * this.startAngle;
+    const endRad   = (Math.PI / 180) * this.endAngle;
+    let x1 = this.cx + this.r*Math.cos(startRad);
+    let y1 = this.cy + this.r*Math.sin(startRad);
+    let x2 = this.cx + this.r*Math.cos(endRad);
+    let y2 = this.cy + this.r*Math.sin(endRad);
+    */
+    let x = this.cx - this.r;
+    let y = this.cy - this.r;
+    let w = this.r*2;
+    let h = w;
+    return {x:x, y:y, width:w, height:h};
+  }
+
+  containsPoint(x, y) {
+    // un punto per ricadere nella regione interessata 
+    // deve soddisfare le seguenti dis-equazioni
+    // 1) deve essere contenuto nel cerchio di raggio r centrato in cx, cy
+    let isIn = Math.pow(x - this.cx, 2) + Math.pow(y -this.cy, 2) < Math.pow(this.r, 2);
+    if(!isIn) return false;
+
+    // 2) deve stare nella regione a destra/sinistra 
+    // della retta che congiunge i punti x1, y1, e x2, y2
+    // cioè la retta di equazione y = m * x + b = 0
+    // dove m = (y2-y1)/(x2-x1) e b = y1 - m * x1 
+    // (se usiamo il punto x1, y1 per determinare l'intercetta  --- y1 = m * x1 + b)
+    // Per fare ciò usiamo il prodotto vettoriale tra il 
+    // vettore A che congiunge p1 e p2 = (p2(x2, y2) - p1(x1, y1)), 
+    // e il vettore V che congiunge p1 e p = (p(x, y) - p1(x1, y1))
+    // 
+    // tale prodotto vettoriale si scrive (x-x1)*(y2-y1) - (y-y1)*(x2-x1).
+    // Se tale valore è negativo il punto sta a destra, altrimenti è a sinistra
+
+    let vProduct = (x-this.x1)*(this.y2-this.y1) - (y-this.y1)*(this.x2-this.x1);
+    let isOnTheRight = vProduct >= 0;
+
+    console.log("vProduct:", vProduct,"isOnTheRight:", isOnTheRight,"sweepFlag:", this.sweepFlag, "largeArcFlag:", this.largeArcFlag );
+    if(this.sweepFlag === 1) {
+      return isOnTheRight;
+      /*
+      if(this.largeArcFlag === 0 ) {
+        return isOnTheRight
+      } else {
+        return !isOnTheRight;
+      }
+        */
+    } else {
+      return !isOnTheRight;
+      /*
+      if(this.largeArcFlag === 0 ) {
+        return isOnTheRight
+      } else {
+        return !isOnTheRight;
+      }
+        */
+    }
+    
+  }
+
+  // secondo me il nome giusto di questa funzione è "translate"
+  moveBy(dx, dy) {
+    dx = roundToPrecision(dx, canvasPrecision);
+    dy = roundToPrecision(dy, canvasPrecision);
+    this.cx += dx;
+    this.cy += dy;
+    
+    this.x1 += dx;
+    this.y1 += dy;
+    this.x2 += dx;
+    this.y2 += dy;
+
+    this.updateSvg(); 
+    this.handler.update();
+  }
+
+  
+  moveTo(x, y) {
+    let deltaX = x - this.cx;
+    let deltaY = y - this.cy;
+    this.moveBy(deltaX, deltaY);
+  }
+
+  resize(newR) {
+    this.setRxAxis(newR);
+  }
+
+  setStartAngle(angle){
+    // normalizzo l'angolo
+    angle = angle%360;
+    if(angle < 0) angle = angle+360;
+    if(angle === -0) angle = 0;
+    // per rimanere sempre sulla stessa ellisse devo controllare 
+    // se angle (il nuovo valore di startAngle) si è scambiato di posizione con 
+    // endAngle rispetto alla posizione di prima, e se si, cambiare lo sweepFlag
+    if((this.endAngle - this.startAngle) / (this.endAngle - angle ) < 0) this.sweepFlag = (this.sweepFlag === 0)? 1: 0;
+
+    // calcolo il nuovo punto intercettato dall'angolo "angle" uscente dal centro
+    let p = pointOnEllipse(this.cx, this.cy, this.r, this.r, this.rotation, angle);
+    this.x1 = p.x; this.y1 = p.y;
+    // imposto l'angolo iniziale
+    this.startAngle = angle;
+    // imposto il largeArcFlag a seconda dell'arco intercettato da i nuovi valori
+    this.largeArcFlag = (Math.abs(this.endAngle - this.startAngle) > 180)? 1 : 0;
+    this.updateSvg();
+    this.handler.update();
+  }
+  setEndAngle(angle){
+    // normalizzo l'angolo
+    angle = angle%360;
+    if(angle < 0) angle = angle+360;
+    if(angle === -0) angle = 0;
+    // per rimanere sempre sulla stessa ellisse devo controllare 
+    // se angle (il nuovo valore di endAngle) si è scambiato di posizione con 
+    // startAngle rispetto alla posizione di prima, e se si, cambiare lo sweepFlag
+    if((this.endAngle - this.startAngle) / (angle - this.startAngle) < 0) this.sweepFlag = (this.sweepFlag == 0)? 1: 0;
+
+    // calcolo il nuovo punto intercettato dall'angolo "angle" uscente dal centro
+    let p = pointOnEllipse(this.cx, this.cy, this.r, this.r, this.rotation, angle);
+    this.x2 = p.x; this.y2 = p.y;
+    // imposto l'angolo finale
+    this.endAngle = angle;
+    // imposto il largeArcFlag a seconda dell'arco intercettato da i nuovi valori
+    let newArc = this.endAngle - this.startAngle;
+    console.log("newArc:", newArc);
+    this.largeArcFlag = (Math.abs(this.endAngle - this.startAngle) > 180)? 1 : 0;
+    this.updateSvg();
+    this.handler.update();
+  }
+  setRxAxis(lenght){
+    this.r = lenght;
+    // calcolo i nuovi punti intercettati dagli angoli startAngle e endAngle
+    let p1 = pointOnEllipse(this.cx, this.cy, this.r, this.r, this.rotation, this.startAngle);
+    this.x1 = p1.x; this.y1 = p1.y;
+    // calcolo il nuovo punto intercettato dall'angolo "angle" uscente dal centro
+    let p2 = pointOnEllipse(this.cx, this.cy, this.r, this.r, this.rotation, this.endAngle);
+    this.x2 = p2.x; this.y2 = p2.y;
+    this.updateSvg();
+    this.handler.update();
+  }
+  setRyAxis(lenght){
+    setRxAxis(lenght);
+  }
+  setArcFlag(arc){
+    // conrtollo che arc non sia nullo, indefinito o uguale al valore già settato
+    // console.log(this, "arc:", arc);
+    if(arc == null || arc == undefined || arc == this.largeArcFlag) return;
+
+    // se cambio arco da maggiore a minore o viceversa, 
+    // per mantenere la stessa ellisse devo cambiare lo 
+    // sweepFlag oppure scambiare i punti p1 e p2
+    this.sweepFlag = (this.sweepFlag == 0)? 1: 0;
+    this.largeArcFlag = (this.largeArcFlag == 0)? 1: 0;
+
+
+    //let tempP1 = {x1: this.x1, y1: this.y1};
+    //this.x1 = this.x2; this.y1 = this.y2;
+    //this.x2 = tempP1.x1; this.y2 = tempP1.y1;
+
+    this.updateSvg();
+    console.log("arc:",this);
+  }
+
+  moveCenterToX (x) {
+    let deltaX = x - this.cx;
+    this.x1 += deltaX;
+    this.x2 += deltaX;
+    this.cx += deltaX;
+    this.updateSvg();
+    this.handler.update();
+  }
+  moveCenterToY (y) {
+    let deltaY = y - this.cy;
+    this.y1 += deltaY;
+    this.y2 += deltaY;
+    this.cy += deltaY;
+    this.updateSvg();
+    this.handler.update();
+  }
+
+  getArcFlag(){
+    return this.largeArcFlag;
+  }
+
+  applyPrecision() {
+    this.cx = roundToPrecision(this.cx, canvasPrecision);
+    this.cy = roundToPrecision(this.cy, canvasPrecision);
+    this.r = roundToPrecision(this.r, canvasPrecision);
+    this.updateSvg();
+    this.handler.update();
+  }
+}
+
+class Arc2 extends Shape {
+  constructor(x1, y1, x2, y2, r, rotation, sweepFlag, largeArcFlag, fillStyle, strokeStyle, visible=true, selected){
+    super();
+
+    this.id = generateElementId();
+    this.name = "arc"+this.id;
+    this.type = "arc";
+
+    this.x1 = x1 ?? 0;
+    this.y1 = y1 ?? 0;
+    this.x2 = x2 ?? 0;
+    this.y2 = y2 ?? 0;
+    this.r = r ?? 0;
+    this.rotation = rotation ?? 0;
+    // Applica precisione iniziale
+    //this.applyPrecisionToProps("r");
+
+    this.sweepFlag = sweepFlag ?? 0;
+    this.largeArcFlag = largeArcFlag ?? 1;
+
+    let p = computeEllipseArcCenter(x1, y1, x2, y2, r, r, this.rotation, this.largeArcFlag, this.sweepFlag);
+    this.cx = p.x;                 // Coordinata x centro ellisse
+    this.cy = p.y;                 // Coordinata y centro ellisse
+
+
+    this.startAngle = arcFromPoint(cx, cy, this.rotation, x1, y1);
+    this.endAngle = arcFromPoint(cx, cy, this.rotation, x2, y2);;
+    // Applica precisione iniziale
+    //this.applyPrecisionToProps("cx", "cy", "r");
+
+    this.fillStyle = fillStyle ?? structuredClone(defaultFillStyle);
+    this.strokeStyle = strokeStyle ?? structuredClone(defaultStrokeStyle);
+    this.visible = visible;
+    this.select(selected ?? false);
+
+    // creo l'elemento svg
+    this.svgElement = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    const d = `M ${x1} ${y1} A ${this.r} ${this.r} ${this.rotation} ${this.largeArcFlag} ${this.sweepFlag} ${x2} ${y2}`;
+    //console.log("d:", d);
+    this.svgElement.setAttribute("d", d);
+    
+    //applica lo stile del riempimento
+    applyFillStyle(this.svgElement, this.fillStyle);
+    //applica lo stile del bordo
+    applyStrokeStyle(this.svgElement, this.strokeStyle);
+    elementsLayer.appendChild(this.svgElement);  
+  }
+
+  
+  render(svg) {
+    if(!this.visible) this.svgElement.style.display = "none";
+    else this.svgElement.style.display = "inline";
+
+    if(!this.handler) return;
+    if(!this.visible || !this.selected) this.handler.hideAll();
+    else {
+      this.handler.update(); 
+      this.handler.showAll();
+    }
+  }
+
+  // se l'oggetto è selezionato e non c'è ancora l'handler, lo creo
+  select(selected) {
+    //console.log("ellipse.select(", selected, ")");
+    this.selected = selected;
+    if(this.selected && !this.handler) {
+      //this.handler = new Handler(this.cx-this.rx, this.cy-this.ry, this.rx*2, this.ry*2, overlayLayer, this);
+      //this.handler = new EllipseHandlers(this, overlayLayer, { onHandlePointerDown: defaultHandleAdapter });
+  
+      let handler = null;
+      const startRad = (Math.PI / 180) * this.startAngle;
+      const endRad   = (Math.PI / 180) * this.endAngle;
+      let x1 = this.cx + this.r*Math.cos(startRad);
+      let y1 = this.cy + this.r*Math.sin(startRad);
+      let x2 = this.cx + this.r*Math.cos(endRad);
+      let y2 = this.cy + this.r*Math.sin(endRad);
+      let w = Math.abs(x2-x1);
+      let h = Math.abs(y2-y1);
+      this.handler = new Handler(Math.min(x1, x2), Math.min(y1, y2), w, h, overlayLayer, this);
+      this.handler.attach(overlayLayer);
+    }
   }
 
   render(svg) {
@@ -654,34 +1005,12 @@ class Arc extends Shape {
   
     //console.log("dalla render di Arc sweepFlag:",this.sweepFlag);
     //console.log("dalla render di Arc largeArcFlag:",this.largeArcFlag);
-    const d = `M ${x1} ${y1} A ${this.r} ${this.r} 0 ${this.largeArcFlag} ${this.sweepFlag} ${x2} ${y2}`;
     //console.log("d:", d);
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
 
-    path.setAttribute("d", d);
-
-    //applica lo stile del bordo
-    path.setAttribute("fill", this.fillStyle.fill || "none");
-    path.setAttribute("fill-opacity", this.fillStyle.fillOpacity ?? 1);
-    //applica lo stile del bordo
-    applyStrokeStyle(path, this.strokeStyle);
-    svg.appendChild(path);
+   
   }
 
-  drawHandlers(svg){
-    if(!this.visible || !this.selected) return;
-    let handler = null;
-    const startRad = (Math.PI / 180) * this.startAngle;
-    const endRad   = (Math.PI / 180) * this.endAngle;
-    let x1 = this.cx + this.r*Math.cos(startRad);
-    let y1 = this.cy + this.r*Math.sin(startRad);
-    let x2 = this.cx + this.r*Math.cos(endRad);
-    let y2 = this.cy + this.r*Math.sin(endRad);
-    let w = Math.abs(x2-x1);
-    let h = Math.abs(y2-y1);
-    handler = new Handler(Math.min(x1, x2), Math.min(y1, y2), w, h, svg, this);
-  }
-
+  
   getBoundingBox() {
     const startRad = (Math.PI / 180) * this.startAngle;
     const endRad   = (Math.PI / 180) * this.endAngle;
@@ -756,13 +1085,13 @@ class EllipseArc extends Shape {
     this.y2 = y2;
 
     let p = computeEllipseArcCenter(x1, y1, x2, y2, rx, ry, rotation, largeArcFlag, sweepFlag);
-    this.cx = p.x;                 // Centro ellisse
-    this.cy = p.y;                 // Centro ellisse
+    this.cx = p.x;                 // Coordinata x centro ellisse
+    this.cy = p.y;                 // Coordinata y centro ellisse
     this.rx = rx;                   // Raggio orizzontale
     this.ry = ry;                   // Raggio verticale
     //this.applyPrecisionToProps("cx", "cy", "rx", "ry");
-    this.startAngle = null;   // Angolo iniziale in radianti (o gradi, da standardizzare)
-    this.endAngle = null;       // Angolo finale in radianti (o gradi)
+    this.startAngle = null;   // Angolo iniziale in gradi (da standardizzare)
+    this.endAngle = null;     // Angolo finale in gradi (da standardizzare)
 
     this.rotation = rotation;       // Rotazione dell'ellisse in gradi
     this.largeArcFlag = largeArcFlag; // 0 o 1
@@ -1084,7 +1413,7 @@ class EllipseArc extends Shape {
     this.rotation = rot;
   }
 
-  move(dx, dy){
+  moveBy(dx, dy){
     this.x1 += dx;
     this.y1 += dy;
     this.x2 += dx;
@@ -1126,7 +1455,7 @@ class EllipseArc extends Shape {
 
 // === Inizio definizione classe Handler ===
 class Handler {
-  constructor(x, y, width, height, svg, element) {
+  constructor(x, y, width, height, layer, element) {
     this.element = element;
     this.handles = [];
     this.bBox = null;
@@ -1143,7 +1472,6 @@ class Handler {
       this.bBox.setAttribute("stroke-width", "1");
       this.bBox.setAttribute("stroke-dasharray", "4,2");
       this.bBox.setAttribute("vector-effect", "non-scaling-stroke");
-      overlayLayer.appendChild(this.bBox);
     }
     // Dimensione dei quadratini handler
     const size = handlerRectSize/canvasZoomFactor;
@@ -1199,9 +1527,10 @@ class Handler {
     }
   }
 
+  
   // questa funzione viene chiamata per aggiornare la posizione 
   // dell'handler quando l'oggetto viene mosso o scalato o ruotato
-  adjustPosition() {
+  update() {
     // riposiziono il bBox nel caso l'elemento sia stato spostato e/o scalato
     let box = this.element.getBoundingBox();
     if(this.element.type != "line"){
@@ -1279,7 +1608,7 @@ class Handler {
   }
 
   adjustCanvasZoom() {
-    this.adjustPosition();
+    this.update();
     /*
     Non è sufficiente aggiornare la dimensione del quadrato perché modificando 
     solo quella il qaudrato non si troverà più centrato
@@ -1305,6 +1634,9 @@ class Handler {
     }
   }
 
+  hideAll() {this.hide();}
+  showAll() {this.show();}
+
   hide() {
     if(this.element.type !== "line") this.bBox.style.display = "none";
     for (let h of this.handles) {
@@ -1313,6 +1645,7 @@ class Handler {
   }
 
   show(){
+    //console.log("chiamato Handler.show()");
     if(this.element.type !== "line") this.bBox.style.display = "inline";
     for (let h of this.handles) {
       h.style.display = "inline";
@@ -1585,178 +1918,6 @@ class BaseHandlers {
   }
 }
 
-class EllipseHandlers1 extends BaseHandlers {
-  /*
-  constructor (element, layer) {
-    super(element, layer);
-    this.bBox = this.createBBox(this.element.cx-this.element.rx, 
-                           this.element.cy-this.element.ry, 
-                           this.element.rx*2, 
-                           this.element.ry*2);
-
-  }
-  */
-  update() {
-    const { cx, cy, rx, ry, rotation } = this.element;
-    const size = handlerRectSize / canvasZoomFactor;
-
-    const cosφ = Math.cos(rotation);
-    const sinφ = Math.sin(rotation);
-
-    // se il bBox non esiste lo creo
-    this.bBox = this.bBox || this.createBBox(cx-rx, cy-ry, rx*2, ry*2);
-    this.adjustPosition();
-
-    // Se il centro non c'è lo creo. Centro
-    this.handles.c = this.handles.c || this.createHandle(cx, cy, size, "c", "move");
-    this.setPos(this.handles.c, cx, cy, size);
-
-    // Estremi asse maggiore
-    /*
-    const major1 = { x: cx + rx*cosφ, y: cy + rx*sinφ };
-    const major2 = { x: cx - rx*cosφ, y: cy - rx*sinφ };
-    [major1, major2].forEach((p, i) => {
-      const t = "major" + (i+1);
-      this.handles[t] = this.handles[t] || this.createHandle(p.x, p.y, size, t, "ew-resize");
-      this.setPos(this.handles[t], p.x, p.y, size);
-    });
-    */
-    // disegno l'asse maggiore
-    const major1 = { x: cx + rx*cosφ, y: cy + rx*sinφ };
-    const major2 = { x: cx - rx*cosφ, y: cy - rx*sinφ };
-    this.helperLines[0] = this.helperLines[0] || this.createHelperLine(major1.x, major1.y, major2.x, major2.y);
-
-
-
-    // Estremi asse minore
-    const minor1 = { x: cx - ry*sinφ, y: cy + ry*cosφ };
-    const minor2 = { x: cx + ry*sinφ, y: cy - ry*cosφ };
-    [minor1, minor2].forEach((p, i) => {
-      const t = "minor" + (i+1);
-      this.handles[t] = this.handles[t] || this.createHandle(p.x, p.y, size, t, "ns-resize", "#ff00ff");
-      this.setPos(this.handles[t], p.x, p.y, size);
-    });
-
-    // Fuochi
-    const c = Math.sqrt(Math.abs(rx*rx - ry*ry));
-    const fx = c*cosφ, fy = c*sinφ;
-    const foci = [
-      { type: "focus1", x: cx + fx, y: cy + fy },
-      { type: "focus2", x: cx - fx, y: cy - fy }
-    ];
-    for (let f of foci) {
-      this.handles[f.type] = this.handles[f.type] || this.createHandle(f.x, f.y, size, f.type, "crosshair", "orange");
-      this.setPos(this.handles[f.type], f.x, f.y, size);
-    }
-
-    // Se visibile, assicurati che siano aggiunti allo svg
-    if (this.visible) this.show();
-  }
-}
-
-class EllipseHandlers0 {
-  constructor(element, svg) {
-    this.element = element;  // riferimento all'oggetto Ellipse
-    this.svg = svg;          // canvas SVG
-    this.handles = {};       // collezione di handle creati
-    this.visible = false;    // stato visibilità
-  }
-
-  createHandle(x, y, size, type, cursor, color="#00ffff") {
-    const h = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    h.setAttribute("x", x - size/2);
-    h.setAttribute("y", y - size/2);
-    h.setAttribute("width", size);
-    h.setAttribute("height", size);
-    h.setAttribute("fill", color);
-    h.setAttribute("stroke", "#000");
-    h.setAttribute("stroke-width", "1");
-    h.setAttribute("vector-effect", "non-scaling-stroke");
-    h.style.cursor = cursor;
-    h.dataset.type = type;
-    return h;
-  }
-
-  update() {
-    const { cx, cy, rx, ry, rotation } = this.element;
-    const size = handlerRectSize / canvasZoomFactor;
-
-    // calcola cosφ e sinφ per rotazione
-    const cosφ = Math.cos(rotation);
-    const sinφ = Math.sin(rotation);
-
-    // Centro
-    this.handles.c = this.handles.c || this.createHandle(cx, cy, size, "c", "move");
-    this.setPos(this.handles.c, cx, cy, size);
-
-    // Vertici bbox NON ruotata
-    const bboxPoints = [
-      { type: "nw", x: cx - rx, y: cy - ry },
-      { type: "ne", x: cx + rx, y: cy - ry },
-      { type: "sw", x: cx - rx, y: cy + ry },
-      { type: "se", x: cx + rx, y: cy + ry }
-    ];
-    for (let p of bboxPoints) {
-      if (!this.handles[p.type]) {
-        this.handles[p.type] = this.createHandle(p.x, p.y, size, p.type, "pointer");
-        if (this.visible) this.svg.appendChild(this.handles[p.type]);
-      }
-      this.setPos(this.handles[p.type], p.x, p.y, size);
-    }
-
-    // Estremi asse maggiore (rispettano rotazione)
-    const major1 = { x: cx + rx*cosφ, y: cy + rx*sinφ };
-    const major2 = { x: cx - rx*cosφ, y: cy - rx*sinφ };
-    ["major1","major2"].forEach((t, i) => {
-      const p = i===0 ? major1 : major2;
-      if (!this.handles[t]) {
-        this.handles[t] = this.createHandle(p.x, p.y, size, t, "crosshair");
-        if (this.visible) this.svg.appendChild(this.handles[t]);
-      }
-      this.setPos(this.handles[t], p.x, p.y, size);
-    });
-
-    // Fuochi
-    const c = Math.sqrt(Math.abs(rx*rx - ry*ry));
-    const fx = c*cosφ, fy = c*sinφ;
-    const focus1 = { x: cx + fx, y: cy + fy };
-    const focus2 = { x: cx - fx, y: cy - fy };
-    ["focus1","focus2"].forEach((t, i) => {
-      const p = i===0 ? focus1 : focus2;
-      if (!this.handles[t]) {
-        this.handles[t] = this.createHandle(p.x, p.y, size, t, "default", "orange");
-        if (this.visible) this.svg.appendChild(this.handles[t]);
-      }
-      this.setPos(this.handles[t], p.x, p.y, size);
-    });
-  }
-
-  setPos(handle, x, y, size) {
-    handle.setAttribute("x", x - size/2);
-    handle.setAttribute("y", y - size/2);
-    handle.setAttribute("width", size);
-    handle.setAttribute("height", size);
-  }
-
-  show() {
-    this.visible = true;
-    Object.values(this.handles).forEach(h => {
-      if (!h.parentNode) this.svg.appendChild(h);
-    });
-  }
-
-  hide() {
-    this.visible = false;
-    Object.values(this.handles).forEach(h => {
-      if (h.parentNode) this.svg.removeChild(h);
-    });
-  }
-
-  destroy() {
-    this.hide();
-    this.handles = {};
-  }
-}
 
 class EllipseHandlers extends BaseHandlers {
   constructor(ellipse, overlayLayer, callbacks) {
@@ -1840,6 +2001,20 @@ function pointOnEllipse(cx, cy, rx, ry, phi, alpha) {
   const x = cx + x1;
   const y = cy + y1;
   return { x, y };
+}
+
+function arcFromPoint(cx, cy, alpha, x, y) {
+  // traslo tutto nell'origine
+  x = x - cx; 
+  y = y - cy; 
+  // esprimo l'angolo in radianti
+  alpha *= Math.PI/180;
+  // applico la rotazione inversa a x e y
+  // notare che cos(-alpha) = cos(alpha) e sin(-alpha) = -sin(alpha)
+  x = x * Math.cos(alpha) + y * Math.sin(alpha);
+  y = -x * Math.sin(alpha) + y * Math.cos(alpha);
+  // ora faccio l'arcotangente del punto x, y e lo trasformo in gradi
+  return Math.atan2(x, y) * 180/Math.PI;
 }
 
 /**

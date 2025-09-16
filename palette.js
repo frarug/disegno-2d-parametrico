@@ -160,7 +160,20 @@ function makePaletteDraggable() {
 function updateZoomDisplay() {
   const display = document.getElementById("zoomFactorDisplay");
   if (display) {
-      display.textContent = `${Math.round(canvasZoomFactor * 100)}%`;
+    display.textContent = `${Math.round(canvasZoomFactor * 100)}%`;
+  }
+}
+
+function updatePointerPosition(x, y) {
+  const displayX = document.getElementById("pointer-posX");
+  const displayY = document.getElementById("pointer-posY");
+  if (displayX && displayY) {
+    x = (x - canvasOffsetX) / (canvasZoomFactor * pxPerMM);
+    y = -(y-canvasHeight +canvasOffsetY) / (canvasZoomFactor * pxPerMM);
+    x = roundToPrecision(x, canvasPrecision);
+    y = roundToPrecision(y, canvasPrecision);
+    displayX.textContent = `x:${x}`;
+    displayY.textContent = `y:${y}`;
   }
 }
 
